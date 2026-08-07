@@ -1,28 +1,10 @@
-import { Inter, Playfair_Display, Cinzel, Geist, Geist_Mono } from "next/font/google";
+import { Roboto_Mono } from "next/font/google";
 import "./globals.css";
+import Header from "@/components/ui/header";
+import Footer from "@/components/ui/footer";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-});
-
-const cinzel = Cinzel({
-  variable: "--font-cinzel",
-  subsets: ["latin"],
-});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const robotoMono = Roboto_Mono({
+  variable: "--font-roboto-mono",
   subsets: ["latin"],
 });
 
@@ -35,9 +17,13 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${playfair.variable} ${cinzel.variable} ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${robotoMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-secondary text-black">{children}</body>
+      <body className="min-h-full flex flex-col bg-secondary text-black font-sans">
+        <Header />
+        <main className="flex-1">{children}</main>
+        <Footer />
+      </body>
     </html>
   );
 }

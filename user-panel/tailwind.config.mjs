@@ -12,10 +12,9 @@ const config = {
         secondary: "var(--secondary)",
       },
       fontFamily: {
-        serif: ['var(--font-playfair)', 'Playfair Display', 'Cormorant Garamond', 'Georgia', 'serif'],
-        sans: ['var(--font-inter)', 'var(--font-geist-sans)', 'Inter', 'sans-serif'],
-        display: ['var(--font-cinzel)', 'Cinzel', 'serif'],
-        mono: ['var(--font-geist-mono)', 'monospace'],
+        sans: ['var(--font-roboto-mono)', 'Roboto Mono', 'monospace'],
+        mono: ['var(--font-roboto-mono)', 'Roboto Mono', 'monospace'],
+        serif: ['var(--font-libertinus-serif)', 'Libertinus Serif', 'serif'],
       },
     },
   },

@@ -6,11 +6,11 @@
   --background: #F2F2F2;
   --foreground: #000000;
   --primary: #202A4E;
-  --secondary: #F2F2F2;
+  --secondary : #2B2B2B;
 }
 
 body {
   background-color: var(--background);
-  color: var(--foreground);
+  color: var(--secondary);
   font-family: var(--font-sans);
 }

@@ -1,69 +1,342 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.js
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+import React, { useState } from "react";
+import Sidebar from "@/components/Sidebar";
+import DashboardView from "@/components/views/DashboardView";
+import CollectionsView from "@/components/views/CollectionsView";
+import CategoryView from "@/components/views/CategoryView";
+import SubCategoryView from "@/components/views/SubCategoryView";
+import DiamondView from "@/components/views/DiamondView";
+import RingSizeView from "@/components/views/RingSizeView";
+import GoldColorView from "@/components/views/GoldColorView";
+import ContactRequestsView from "@/components/views/ContactRequestsView";
+import CouponCodesView from "@/components/views/CouponCodesView";
+import { LogOut, AlertCircle, Plus, X } from "lucide-react";
+
+export default function AdminPage() {
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [loggedOut, setLoggedOut] = useState(false);
+
+  // Dynamic Data Lists
+  const [collections, setCollections] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+
+  const [diamondShapes, setDiamondShapes] = useState([]);
+  const [ringSizes, setRingSizes] = useState([]);
+  const [goldColors, setGoldColors] = useState([]);
+
+  const [contactRequests, setContactRequests] = useState([
+    {
+      id: "1",
+      name: "Ananya Sharma",
+      email: "ananya@example.com",
+      phone: "+91 98765 43210",
+      message: "Inquiry about custom diamond solitaire ring custom engraving.",
+      date: "Today, 10:30 AM",
+      status: "Pending",
+    },
+    {
+      id: "2",
+      name: "Rohan Verma",
+      email: "rohan.v@example.com",
+      phone: "+91 98123 45678",
+      message: "Request for booking an in-person bridal jewelry appointment.",
+      date: "Yesterday",
+      status: "Responded",
+    },
+    {
+      id: "3",
+      name: "Priya Patel",
+      email: "priya.p@example.com",
+      phone: "+91 97654 32109",
+      message: "Question regarding international shipping and insurance.",
+      date: "05 Aug 2026",
+      status: "Pending",
+    },
+  ]);
+
+  const [couponCodes, setCouponCodes] = useState([
+    {
+      id: "1",
+      code: "WELCOME10",
+      name: "WELCOME10",
+      discount: "10% OFF",
+      minPurchase: "₹5,000",
+      expiry: "31 Dec 2026",
+      status: "Active",
+    },
+    {
+      id: "2",
+      code: "FESTIVE20",
+      name: "FESTIVE20",
+      discount: "20% OFF",
+      minPurchase: "₹25,000",
+      expiry: "15 Nov 2026",
+      status: "Active",
+    },
+    {
+      id: "3",
+      code: "LUXURY5000",
+      name: "LUXURY5000",
+      discount: "₹5,000 OFF",
+      minPurchase: "₹100,000",
+      expiry: "30 Sep 2026",
+      status: "Active",
+    },
+  ]);
+
+  // Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setLoggedOut(true);
+    setShowLogoutModal(false);
+  };
+
+  const handleOpenAddModal = () => {
+    setNewItemName("");
+    setShowAddModal(true);
+  };
+
+  const handleAddItem = (e) => {
+    e.preventDefault();
+    if (!newItemName.trim()) return;
+
+    const newItem = { id: `${activeTab}-${Date.now()}`, name: newItemName };
+
+    if (activeTab === "collections") {
+      setCollections((prev) => [...prev, newItem]);
+    } else if (activeTab === "categories") {
+      setCategories((prev) => [...prev, newItem]);
+    } else if (activeTab === "sub_categories") {
+      setSubCategories((prev) => [...prev, newItem]);
+    } else if (activeTab === "diamond") {
+      setDiamondShapes((prev) => [...prev, newItem]);
+    } else if (activeTab === "ring_size") {
+      setRingSizes((prev) => [
+        ...prev,
+        {
+          id: newItem.id,
+          usSize: newItemName,
+          innerDiameter: "16.5 mm",
+          circumference: "51.8 mm",
+        },
+      ]);
+    } else if (activeTab === "gold_color") {
+      setGoldColors((prev) => [
+        ...prev,
+        {
+          id: newItem.id,
+          name: newItemName,
+          hexCode: "#E5C158",
+          slug: newItemName.toLowerCase(),
+        },
+      ]);
+    } else if (activeTab === "coupon_codes") {
+      setCouponCodes((prev) => [
+        ...prev,
+        {
+          id: newItem.id,
+          code: newItemName.toUpperCase(),
+          name: newItemName.toUpperCase(),
+          discount: "15% OFF",
+          minPurchase: "₹10,000",
+          expiry: "31 Dec 2026",
+          status: "Active",
+        },
+      ]);
+    }
+
+    setShowAddModal(false);
+  };
+
+  const counts = {
+    contact_requests: contactRequests.length,
+    sellers: 3,
+    collections: collections.length,
+    categories: categories.length,
+    sub_categories: subCategories.length,
+    diamond: diamondShapes.length,
+    ring_size: ringSizes.length,
+    gold_color: goldColors.length,
+  };
+
+  if (loggedOut) {
+    return (
+      <div className="min-h-screen bg-[#202A4E] text-white flex flex-col items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/10 text-center space-y-4 shadow-2xl">
+          <div className="w-16 h-16 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto">
+            <LogOut className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-serif font-bold text-white">Logged Out</h2>
+          <p className="text-gray-300 text-sm">
+            You have successfully logged out of the Admin Portal.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => setLoggedOut(false)}
+            className="w-full py-3 rounded-xl bg-white text-[#202A4E] font-bold text-sm hover:bg-gray-100 transition-colors shadow-md mt-2"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+            Log In Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] flex font-sans">
+      {/* 1. Sidebar Drawer */}
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onLogout={handleLogout}
+      />
+
+      {/* 2. Main Content Area */}
+      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+        <main className="p-6 md:p-10 flex-1 max-w-7xl w-full mx-auto">
+          {activeTab === "dashboard" && <DashboardView counts={counts} />}
+          {activeTab === "contact_requests" && (
+            <ContactRequestsView
+              items={contactRequests}
+              onBack={() => setActiveTab("dashboard")}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          )}
+          {activeTab === "collections" && (
+            <CollectionsView
+              items={collections}
+              onAdd={handleOpenAddModal}
+              onBack={() => setActiveTab("dashboard")}
+            />
+          )}
+          {activeTab === "categories" && (
+            <CategoryView
+              items={categories}
+              onAdd={handleOpenAddModal}
+              onBack={() => setActiveTab("dashboard")}
+            />
+          )}
+          {activeTab === "sub_categories" && (
+            <SubCategoryView
+              items={subCategories}
+              onAdd={handleOpenAddModal}
+              onBack={() => setActiveTab("dashboard")}
+            />
+          )}
+          {activeTab === "coupon_codes" && (
+            <CouponCodesView
+              items={couponCodes}
+              onAdd={handleOpenAddModal}
+              onBack={() => setActiveTab("dashboard")}
+            />
+          )}
+          {activeTab === "diamond" && (
+            <DiamondView items={diamondShapes} onAdd={handleOpenAddModal} />
+          )}
+          {activeTab === "ring_size" && (
+            <RingSizeView items={ringSizes} onAdd={handleOpenAddModal} />
+          )}
+          {activeTab === "gold_color" && (
+            <GoldColorView items={goldColors} onAdd={handleOpenAddModal} />
+          )}
+        </main>
+      </div>
+
+      {/* 3. Add Item Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-lg text-gray-900 capitalize">
+                  Add {activeTab.replace("_", " ")}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddItem} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">
+                  Name / Code
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter name or code..."
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 focus:ring-2 focus:ring-black/10 focus:border-black outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-black text-sm font-semibold text-white hover:bg-gray-900 shadow-sm"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </main>
+      )}
+
+      {/* 4. Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl space-y-4 border border-gray-100">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg text-gray-900">
+                Confirm Logout
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Are you sure you want to log out?
+              </p>
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 text-sm font-semibold text-white hover:bg-red-700 shadow-sm"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
