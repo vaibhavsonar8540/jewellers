@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import CustomImg from "@/components/CustomImg";
+import { useSelector } from "react-redux";
 import {
   LayoutGrid,
   MessageSquare,
@@ -16,6 +17,8 @@ import {
   LogOut,
   Menu,
   X,
+  UserCheck,
+  ShieldCheck,
 } from "lucide-react";
 
 export const NAV_ITEMS = [
@@ -32,6 +35,11 @@ export const NAV_ITEMS = [
 
 export default function Sidebar({ activeTab, setActiveTab, onLogout }) {
   const [isOpen, setIsOpen] = useState(false);
+  const user = useSelector((state) => state.auth.user);
+
+  const userName = user?.user_metadata?.name || user?.email?.split("@")[0] || "Admin User";
+  const userEmail = user?.email || "admin@velora.com";
+  const userInitial = userName.charAt(0).toUpperCase();
 
   const handleTabClick = (id) => {
     setActiveTab(id);
@@ -105,11 +113,28 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout }) {
           </nav>
         </div>
 
-        {/* Logout Button */}
-        <div className="p-4 border-t border-gray-100">
+        {/* Bottom Profile & Logout Footer */}
+        <div className="p-4 border-t border-gray-100 space-y-3">
+          {/* User Profile Card Section */}
+          <div className="p-3 rounded-2xl bg-gray-50 border border-gray-100 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#202A4E] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+              {userInitial}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-gray-900 truncate">
+                  {userName}
+                </h4>
+                <ShieldCheck className="w-3.5 h-3.5 text-[#202A4E] shrink-0" />
+              </div>
+              <p className="text-[11px] text-gray-500 truncate">{userEmail}</p>
+            </div>
+          </div>
+
+          {/* Logout Button */}
           <button
             onClick={onLogout}
-            className="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+            className="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-2xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
           >
             <LogOut className="w-4 h-4 text-red-500" />
             <span>Logout</span>
@@ -119,3 +144,4 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout }) {
     </>
   );
 }
+

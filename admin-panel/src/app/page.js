@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import DashboardView from "@/components/views/DashboardView";
 import CollectionsView from "@/components/views/CollectionsView";
@@ -11,17 +11,38 @@ import RingSizeView from "@/components/views/RingSizeView";
 import GoldColorView from "@/components/views/GoldColorView";
 import ContactRequestsView from "@/components/views/ContactRequestsView";
 import CouponCodesView from "@/components/views/CouponCodesView";
-import { LogOut, AlertCircle, Plus, X } from "lucide-react";
+import AuthView from "@/components/views/AuthView";
+import { useDispatch, useSelector } from "react-redux";
+import { setUser, clearAuth, setAuthLoading } from "@/store/slice/authSlice";
+import { checkAuthSessionAction, logoutUserAction } from "@/action/auth.action";
+import { LogOut, AlertCircle, Plus, X, Loader2 } from "lucide-react";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [loggedOut, setLoggedOut] = useState(false);
+
+  const dispatch = useDispatch();
+  const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
+
+  // Check auth session on initial load
+  useEffect(() => {
+    const initAuth = async () => {
+      dispatch(setAuthLoading(true));
+      const { user: sessionUser } = await checkAuthSessionAction();
+      if (sessionUser) {
+        dispatch(setUser(sessionUser));
+      } else {
+        dispatch(clearAuth());
+      }
+    };
+    initAuth();
+  }, [dispatch]);
 
   // Dynamic Data Lists
   const [collections, setCollections] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
+
 
   const [diamondShapes, setDiamondShapes] = useState([]);
   const [ringSizes, setRingSizes] = useState([]);
@@ -95,9 +116,15 @@ export default function AdminPage() {
     setShowLogoutModal(true);
   };
 
-  const confirmLogout = () => {
-    setLoggedOut(true);
+  const confirmLogout = async () => {
     setShowLogoutModal(false);
+    try {
+      await logoutUserAction();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      dispatch(clearAuth());
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -168,27 +195,19 @@ export default function AdminPage() {
     gold_color: goldColors.length,
   };
 
-  if (loggedOut) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#202A4E] text-white flex flex-col items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/10 text-center space-y-4 shadow-2xl">
-          <div className="w-16 h-16 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto">
-            <LogOut className="w-8 h-8" />
-          </div>
-          <h2 className="text-2xl font-serif font-bold text-white">Logged Out</h2>
-          <p className="text-gray-300 text-sm">
-            You have successfully logged out of the Admin Portal.
-          </p>
-          <button
-            onClick={() => setLoggedOut(false)}
-            className="w-full py-3 rounded-xl bg-white text-[#202A4E] font-bold text-sm hover:bg-gray-100 transition-colors shadow-md mt-2"
-          >
-            Log In Again
-          </button>
-        </div>
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-3">
+        <Loader2 className="w-8 h-8 text-[#202A4E] animate-spin" />
+        <p className="text-xs text-gray-500 font-medium">Checking authentication...</p>
       </div>
     );
   }
+
+  if (!isAuthenticated || !user) {
+    return <AuthView />;
+  }
+
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-sans">

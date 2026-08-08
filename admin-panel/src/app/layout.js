@@ -1,5 +1,6 @@
 import { Roboto_Mono } from "next/font/google";
 import "./globals.css";
+import StoreProvider from "@/store/Provider";
 
 const robotoMono = Roboto_Mono({
   variable: "--font-roboto-mono",
@@ -18,8 +19,12 @@ export default function RootLayout({ children }) {
       className={`${robotoMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#F8FAFC] text-gray-900 font-sans">
-        {children}
+        <StoreProvider>
+          {children}
+        </StoreProvider>
       </body>
     </html>
   );
 }
+
+    
