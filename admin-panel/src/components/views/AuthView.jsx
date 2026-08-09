@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import CustomImg from "@/components/CustomImg";
 import { useDispatch } from "react-redux";
-import { setUser } from "@/store/slice/authSlice";
+import { setUser, setSession } from "@/store/slice/authSlice";
 import { loginUserAction, registerUserAction } from "@/action/auth.action";
 import { Loader2, Mail, Lock, User, AlertCircle, CheckCircle2 } from "lucide-react";
 
@@ -29,33 +29,64 @@ export default function AuthView() {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setErrorMsg("Please enter a valid email address.");
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      setErrorMsg("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (isRegister && !name.trim()) {
+      setErrorMsg("Please enter your full name.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (isRegister) {
         // Register flow using signUp
-        const res = await registerUserAction({ email, password, name });
+        const res = await registerUserAction({
+          email: trimmedEmail,
+          password,
+          name: name.trim(),
+        });
+
         if (res?.error) {
           setErrorMsg(res.error.message || "Failed to register account.");
         } else if (res?.data?.user) {
-          setSuccessMsg("Registration successful! Check your email or sign in.");
           if (res?.data?.session) {
+            dispatch(setSession(res.data.session));
             dispatch(setUser(res.data.user));
           } else {
-            // Auto switch to login view
-            setTimeout(() => {
-              setIsRegister(false);
-              setSuccessMsg("Account created! Please enter your credentials to login.");
-            }, 1500);
+            setSuccessMsg("Account created successfully! Please enter your password to sign in.");
+            setIsRegister(false);
+            setPassword("");
           }
+        } else {
+          setErrorMsg("Registration failed. Please try again.");
         }
       } else {
         // Login flow using signInWithPassword
-        const res = await loginUserAction({ email, password });
+        const res = await loginUserAction({
+          email: trimmedEmail,
+          password,
+        });
+
         if (res?.error) {
-          setErrorMsg(res.error.message || "Invalid credentials.");
+          setErrorMsg(res.error.message || "Invalid email or password.");
         } else if (res?.data?.user) {
+          if (res?.data?.session) {
+            dispatch(setSession(res.data.session));
+          }
           dispatch(setUser(res.data.user));
+        } else {
+          setErrorMsg("Sign in failed. Please check your credentials.");
         }
       }
     } catch (err) {
@@ -67,8 +98,8 @@ export default function AuthView() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 sm:p-6 font-sans">
-      <div className="w-full max-w-md bg-white p-8 sm:p-10 flex flex-col items-center space-y-6">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4 sm:p-6 font-sans">
+      <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-xl p-8 sm:p-10 flex flex-col items-center space-y-6">
         {/* Top Logo */}
         <div className="flex flex-col items-center justify-center space-y-2">
           <CustomImg
@@ -160,11 +191,11 @@ export default function AuthView() {
             </div>
           </div>
 
-          {/* Submit Button with Primary Color bg-[#202A4E] */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#202A4E] text-white font-semibold text-sm hover:bg-[#18203d] active:scale-98 transition-all shadow-md disabled:opacity-50 mt-2"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#202A4E] text-white font-semibold text-sm hover:bg-[#18203d] active:scale-98 transition-all shadow-md disabled:opacity-50 mt-2 cursor-pointer"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {loading
@@ -184,7 +215,7 @@ export default function AuthView() {
             <button
               type="button"
               onClick={handleToggleMode}
-              className="font-bold text-[#202A4E] hover:underline ml-1"
+              className="font-bold text-[#202A4E] hover:underline ml-1 cursor-pointer"
             >
               {isRegister ? "Sign In" : "Register"}
             </button>

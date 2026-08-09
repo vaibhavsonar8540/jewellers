@@ -5,11 +5,9 @@ import CustomImg from "@/components/CustomImg";
 import { useSelector } from "react-redux";
 import {
   LayoutGrid,
+  Package,
   MessageSquare,
-  Store,
   Layers,
-  Grid,
-  ListFilter,
   Ticket,
   Gem,
   Ruler,
@@ -17,29 +15,28 @@ import {
   LogOut,
   Menu,
   X,
-  UserCheck,
   ShieldCheck,
 } from "lucide-react";
 
 export const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
-  { id: "contact_requests", label: "Contact Requests", icon: MessageSquare },
+  { id: "products", label: "Product", icon: Package },
   { id: "collections", label: "Collection", icon: Layers },
-  { id: "categories", label: "Category", icon: Grid },
-  { id: "sub_categories", label: "Sub Category", icon: ListFilter },
-  { id: "coupon_codes", label: "Coupon Code", icon: Ticket },
   { id: "diamond", label: "Diamond Shapes", icon: Gem },
   { id: "ring_size", label: "Ring Size", icon: Ruler },
   { id: "gold_color", label: "Gold Color", icon: Palette },
+  { id: "coupon_codes", label: "Coupon Code", icon: Ticket },
+  { id: "contact_requests", label: "Contact Requests", icon: MessageSquare },
 ];
 
 export default function Sidebar({ activeTab, setActiveTab, onLogout }) {
   const [isOpen, setIsOpen] = useState(false);
   const user = useSelector((state) => state.auth.user);
 
-  const userName = user?.user_metadata?.name || user?.email?.split("@")[0] || "Admin User";
-  const userEmail = user?.email || "admin@velora.com";
-  const userInitial = userName.charAt(0).toUpperCase();
+  const userName = user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
+  const userEmail = user?.email || "";
+  const userRole = user?.user_metadata?.role || user?.role || "user";
+  const userInitial = userName ? userName.charAt(0).toUpperCase() : "U";
 
   const handleTabClick = (id) => {
     setActiveTab(id);
@@ -74,15 +71,33 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout }) {
       >
         <div className="flex flex-col flex-1 overflow-y-auto py-6">
           {/* Logo Header */}
-          <div className="px-6 pb-6 flex items-center justify-center">
+          <div className="px-6 flex items-center justify-center">
             <CustomImg
               srcAttr="/logo.webp"
               altAttr="Velora Jewellers Logo"
               titleAttr="Velora Jewellers Logo"
               width={180}
               height={50}
-              className="h-10 sm:h-20 w-auto object-contain"
+              className="h-10 sm:h-16 w-auto object-contain"
             />
+          </div>
+
+          {/* User Profile Section (Below Logo) */}
+          <div className="px-4 mt-4 pb-2">
+            <div className="p-3 rounded-2xl bg-gray-50 border border-gray-100 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#202A4E] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                {userInitial}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h4 className="text-xs font-bold text-gray-900 truncate">
+                    {userName}
+                  </h4>
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#202A4E] shrink-0" />
+                </div>
+                <p className="text-[11px] text-gray-500 truncate">{userEmail}</p>
+              </div>
+            </div>
           </div>
 
           {/* Navigation Links */}
@@ -113,28 +128,11 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout }) {
           </nav>
         </div>
 
-        {/* Bottom Profile & Logout Footer */}
-        <div className="p-4 border-t border-gray-100 space-y-3">
-          {/* User Profile Card Section */}
-          <div className="p-3 rounded-2xl bg-gray-50 border border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#202A4E] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-              {userInitial}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h4 className="text-xs font-bold text-gray-900 truncate">
-                  {userName}
-                </h4>
-                <ShieldCheck className="w-3.5 h-3.5 text-[#202A4E] shrink-0" />
-              </div>
-              <p className="text-[11px] text-gray-500 truncate">{userEmail}</p>
-            </div>
-          </div>
-
-          {/* Logout Button */}
+        {/* Bottom Logout Footer */}
+        <div className="p-4 border-t border-gray-100">
           <button
             onClick={onLogout}
-            className="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-2xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+            className="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-2xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4 text-red-500" />
             <span>Logout</span>
@@ -144,4 +142,3 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout }) {
     </>
   );
 }
-

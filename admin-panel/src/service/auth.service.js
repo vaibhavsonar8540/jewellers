@@ -2,84 +2,106 @@ import { supabase } from "@/app/lib/db";
 
 // Register user with email and password
 export const signUpService = async ({ email, password, name }) => {
+  try {
+    const cleanEmail = email.trim();
+    const cleanName = name ? name.trim() : cleanEmail.split("@")[0];
+
     const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-            data: {
-                name: name || email.split("@")[0],
-            },
+      email: cleanEmail,
+      password,
+      options: {
+        data: {
+          name: cleanName,
+          role: "user",
         },
+      },
     });
 
     if (error) {
-        console.error("Supabase SignUp Error:", error);
-        throw error;
+      console.error("Supabase SignUp Error:", error);
+      return { data: null, error };
     }
 
-    // Also upsert profile record in 'profiles' table if it exists
+    // Try to create/upsert user record in 'profiles' table if accessible
     if (data?.user) {
-        try {
-            const { error: profileError } = await supabase.from("profiles").upsert([
-                {
-                    id: data.user.id,
-                    name: name || email.split("@")[0],
-                    email: email,
-                },
-            ]);
-            if (profileError) {
-                console.warn("Profile upsert warning:", profileError);
-            }
-        } catch (err) {
-            console.warn("Profile upsert warning:", err);
-        }
+      try {
+        await supabase.from("profiles").upsert([
+          {
+            id: data.user.id,
+            name: cleanName,
+            email: cleanEmail,
+            role: "user",
+          },
+        ]);
+      } catch (profileErr) {
+        console.warn("Profile upsert warning:", profileErr);
+      }
     }
 
-    return { data, error };
+    return { data, error: null };
+  } catch (err) {
+    console.error("signUpService unexpected error:", err);
+    return { data: null, error: err };
+  }
 };
 
 // Login user with email and password
 export const signInService = async ({ email, password }) => {
+  try {
+    const cleanEmail = email.trim();
     const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      email: cleanEmail,
+      password,
     });
 
     if (error) {
-        console.error("Supabase SignIn Error:", error);
-        throw error;
+      console.error("Supabase SignIn Error:", error);
+      return { data: null, error };
     }
 
-    return { data, error };
+    return { data, error: null };
+  } catch (err) {
+    console.error("signInService unexpected error:", err);
+    return { data: null, error: err };
+  }
 };
 
 // Logout user
 export const signOutService = async () => {
+  try {
     const { error } = await supabase.auth.signOut();
     if (error) {
-        console.error("Supabase SignOut Error:", error);
-        throw error;
+      console.error("Supabase SignOut Error:", error);
+      return { success: false, error };
     }
-    return { success: true };
+    return { success: true, error: null };
+  } catch (err) {
+    console.error("signOutService unexpected error:", err);
+    return { success: false, error: err };
+  }
 };
 
 // Get current session and user
 export const getCurrentSessionService = async () => {
+  try {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) {
-        console.error("Supabase GetSession Error:", sessionError);
-        return { user: null, session: null };
-    }
-
-    if (!session) {
-        return { user: null, session: null };
+    if (sessionError || !session) {
+      return { user: null, session: null };
     }
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) {
-        console.error("Supabase GetUser Error:", userError);
-        return { user: session.user, session };
+    if (userError || !user) {
+      return { user: session.user, session };
     }
 
     return { user, session };
+  } catch (err) {
+    console.error("getCurrentSessionService Error:", err);
+    return { user: null, session: null };
+  }
+};
+
+// Listen to auth state changes
+export const onAuthStateChangeService = (callback) => {
+  return supabase.auth.onAuthStateChange(callback);
 };

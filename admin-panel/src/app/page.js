@@ -3,9 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import DashboardView from "@/components/views/DashboardView";
-import CollectionsView from "@/components/views/CollectionsView";
-import CategoryView from "@/components/views/CategoryView";
-import SubCategoryView from "@/components/views/SubCategoryView";
+import CollectionTabView from "@/components/views/CollectionTabView";
+import ProductView from "@/components/views/ProductView";
 import DiamondView from "@/components/views/DiamondView";
 import RingSizeView from "@/components/views/RingSizeView";
 import GoldColorView from "@/components/views/GoldColorView";
@@ -13,8 +12,8 @@ import ContactRequestsView from "@/components/views/ContactRequestsView";
 import CouponCodesView from "@/components/views/CouponCodesView";
 import AuthView from "@/components/views/AuthView";
 import { useDispatch, useSelector } from "react-redux";
-import { setUser, clearAuth, setAuthLoading } from "@/store/slice/authSlice";
-import { checkAuthSessionAction, logoutUserAction } from "@/action/auth.action";
+import { setUser, setSession, clearAuth, setAuthLoading } from "@/store/slice/authSlice";
+import { checkAuthSessionAction, logoutUserAction, subscribeAuthStateAction } from "@/action/auth.action";
 import { LogOut, AlertCircle, Plus, X, Loader2 } from "lucide-react";
 
 export default function AdminPage() {
@@ -24,18 +23,34 @@ export default function AdminPage() {
   const dispatch = useDispatch();
   const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
 
-  // Check auth session on initial load
+  // Check auth session on initial load and listen for auth state changes
   useEffect(() => {
     const initAuth = async () => {
       dispatch(setAuthLoading(true));
-      const { user: sessionUser } = await checkAuthSessionAction();
+      const { user: sessionUser, session } = await checkAuthSessionAction();
       if (sessionUser) {
         dispatch(setUser(sessionUser));
+        if (session) dispatch(setSession(session));
       } else {
         dispatch(clearAuth());
       }
     };
+
     initAuth();
+
+    // Subscribe to session changes (e.g. login, logout, token refresh)
+    const { data: authListener } = subscribeAuthStateAction((_event, session) => {
+      if (session?.user) {
+        dispatch(setUser(session.user));
+        dispatch(setSession(session));
+      } else {
+        dispatch(clearAuth());
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
   }, [dispatch]);
 
   // Dynamic Data Lists
@@ -222,33 +237,26 @@ export default function AdminPage() {
       <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
         <main className="p-6 md:p-10 flex-1 max-w-7xl w-full mx-auto">
           {activeTab === "dashboard" && <DashboardView counts={counts} />}
-          {activeTab === "contact_requests" && (
-            <ContactRequestsView
-              items={contactRequests}
+          {activeTab === "products" && (
+            <ProductView onBack={() => setActiveTab("dashboard")} />
+          )}
+          {(activeTab === "collections" ||
+            activeTab === "categories" ||
+            activeTab === "sub_categories") && (
+            <CollectionTabView
+              initialTab={
+                activeTab === "categories"
+                  ? "category"
+                  : activeTab === "sub_categories"
+                  ? "sub_category"
+                  : "collection"
+              }
               onBack={() => setActiveTab("dashboard")}
             />
           )}
-          {activeTab === "collections" && (
-            <CollectionsView
-              items={collections}
-              onAdd={handleOpenAddModal}
-              onBack={() => setActiveTab("dashboard")}
-            />
-          )}
-          {activeTab === "categories" && (
-            <CategoryView
-              items={categories}
-              onAdd={handleOpenAddModal}
-              onBack={() => setActiveTab("dashboard")}
-            />
-          )}
-          {activeTab === "sub_categories" && (
-            <SubCategoryView
-              items={subCategories}
-              onAdd={handleOpenAddModal}
-              onBack={() => setActiveTab("dashboard")}
-            />
-          )}
+          {activeTab === "diamond" && <DiamondView />}
+          {activeTab === "ring_size" && <RingSizeView />}
+          {activeTab === "gold_color" && <GoldColorView />}
           {activeTab === "coupon_codes" && (
             <CouponCodesView
               items={couponCodes}
@@ -256,14 +264,11 @@ export default function AdminPage() {
               onBack={() => setActiveTab("dashboard")}
             />
           )}
-          {activeTab === "diamond" && (
-            <DiamondView items={diamondShapes} onAdd={handleOpenAddModal} />
-          )}
-          {activeTab === "ring_size" && (
-            <RingSizeView items={ringSizes} onAdd={handleOpenAddModal} />
-          )}
-          {activeTab === "gold_color" && (
-            <GoldColorView items={goldColors} onAdd={handleOpenAddModal} />
+          {activeTab === "contact_requests" && (
+            <ContactRequestsView
+              items={contactRequests}
+              onBack={() => setActiveTab("dashboard")}
+            />
           )}
         </main>
       </div>
