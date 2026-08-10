@@ -13,6 +13,12 @@ import {
   createRingSizeService,
   getPuritiesService,
   createPurityService,
+  getProductsService,
+  createProductService,
+  toggleProductActiveService,
+  updateProductService,
+  deleteProductService,
+  removeProductMediaService,
 } from "@/service/common.service";
 
 export const createCollection = async (payload) => {
@@ -152,5 +158,65 @@ export const createPurityAction = async (payload) => {
   } catch (error) {
     console.error("Action createPurityAction Error:", error);
     return { data: null, error: { message: error.message || "An unexpected error occurred." } };
+  }
+};
+
+export const fetchProductsAction = async () => {
+  try {
+    const res = await getProductsService();
+    return res;
+  } catch (error) {
+    console.error("Action fetchProductsAction Error:", error);
+    return { data: [], error: { message: error.message || "Failed to fetch products." } };
+  }
+};
+
+export const createProductAction = async (payload) => {
+  try {
+    const res = await createProductService(payload);
+    return res;
+  } catch (error) {
+    console.error("Action createProductAction Error:", error);
+    return { data: null, error: { message: error.message || "An unexpected error occurred." } };
+  }
+};
+
+export const toggleProductActiveAction = async (productId, isActive) => {
+  try {
+    const res = await toggleProductActiveService(productId, isActive);
+    return res;
+  } catch (error) {
+    console.error("Action toggleProductActiveAction Error:", error);
+    return { data: null, error: { message: error.message || "Failed to update status." } };
+  }
+};
+
+export const updateProductAction = async (payload) => {
+  try {
+    const res = await updateProductService(payload);
+    return res;
+  } catch (error) {
+    console.error("Action updateProductAction Error:", error);
+    return { data: null, error: { message: error.message || "An unexpected error occurred during product update." } };
+  }
+};
+
+export const deleteProductAction = async (productId) => {
+  try {
+    const res = await deleteProductService(productId);
+    return res;
+  } catch (error) {
+    console.error("Action deleteProductAction Error:", error);
+    return { data: null, error: { message: error.message || "Failed to delete product." } };
+  }
+};
+
+export const removeProductMediaAction = async (productId, colorId = null) => {
+  try {
+    const res = await removeProductMediaService(productId, colorId);
+    return res;
+  } catch (error) {
+    console.error("Action removeProductMediaAction Error:", error);
+    return { data: null, error: { message: error.message || "Failed to remove product media." } };
   }
 };

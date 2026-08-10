@@ -7,6 +7,7 @@ import CollectionTabView from "@/components/views/CollectionTabView";
 import ProductView from "@/components/views/ProductView";
 import DiamondView from "@/components/views/DiamondView";
 import RingSizeView from "@/components/views/RingSizeView";
+import CaratView from "@/components/views/CaratView";
 import GoldColorView from "@/components/views/GoldColorView";
 import ContactRequestsView from "@/components/views/ContactRequestsView";
 import CouponCodesView from "@/components/views/CouponCodesView";
@@ -256,6 +257,7 @@ export default function AdminPage() {
           )}
           {activeTab === "diamond" && <DiamondView />}
           {activeTab === "ring_size" && <RingSizeView />}
+          {activeTab === "carats" && <CaratView />}
           {activeTab === "gold_color" && <GoldColorView />}
           {activeTab === "coupon_codes" && (
             <CouponCodesView

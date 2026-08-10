@@ -5,9 +5,11 @@ import CustomImg from "@/components/CustomImg";
 import Link from "next/link";
 import { Gem, CalendarCheck, Search, User, ShoppingBag } from "lucide-react";
 
+import NavigationHeader from "@/components/ui/navigationHeader";
+
 const Header = () => {
   return (
-    <header className="w-full font-sans">
+    <header className="w-full font-sans sticky top-0 z-50 shadow-xs bg-white">
       {/* 1. Top Announcement Bar */}
       <div className="bg-primary text-white py-2.5 px-4 text-center text-xs md:text-sm font-medium tracking-wide">
         <span>Discover What's New - </span>
@@ -20,7 +22,7 @@ const Header = () => {
       </div>
 
       {/* 2. Main Navigation Header */}
-      <div className="bg-white border-b border-gray-200/80 pt-3 sticky top-0 z-50 shadow-xs">
+      <div className="bg-white border-b border-gray-100 pt-3">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 flex items-center justify-between min-h-[70px] sm:min-h-[85px]">
           
           {/* Left Actions */}
@@ -51,6 +53,7 @@ const Header = () => {
                 titleAttr="Jewellers Brand Logo"
                 width={220}
                 height={60}
+                priority={true}
                 className="h-10 sm:h-20 md:h-24 w-auto object-contain transition-transform duration-200 hover:scale-102"
               />
             </Link>
@@ -82,6 +85,9 @@ const Header = () => {
 
         </div>
       </div>
+
+      {/* 3. Sub Navigation Bar (Collections -> Categories -> Subcategories Mega Menu) */}
+      <NavigationHeader />
     </header>
   );
 };

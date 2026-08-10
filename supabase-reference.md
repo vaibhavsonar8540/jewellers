@@ -320,3 +320,254 @@ BEGIN
     RETURN v_result;
 END;
 $$;
+
+### Supabase RPC Function: `update_product_with_variation`
+
+```sql
+CREATE OR REPLACE FUNCTION update_product_with_variation(
+    p_product_id UUID,
+    p_name TEXT DEFAULT NULL,
+    p_sku TEXT DEFAULT NULL,
+    p_slug TEXT DEFAULT NULL,
+    p_description TEXT DEFAULT NULL,
+    p_gender TEXT DEFAULT NULL,
+    p_is_active BOOLEAN DEFAULT NULL,
+    p_price NUMERIC(10, 2) DEFAULT NULL,
+    p_discount_percentage NUMERIC(5, 2) DEFAULT NULL,
+    p_stock INT DEFAULT NULL,
+    p_length TEXT DEFAULT NULL,
+    p_size TEXT DEFAULT NULL,
+    p_meta_title TEXT DEFAULT NULL,
+    p_meta_description TEXT DEFAULT NULL,
+    p_meta_keywords TEXT DEFAULT NULL,
+    p_collection_id UUID DEFAULT NULL,
+    p_category_id UUID DEFAULT NULL,
+    p_sub_category_id UUID DEFAULT NULL,
+    p_diamond_shape_id UUID DEFAULT NULL,
+    p_variations JSONB DEFAULT NULL,
+    p_media_mappings JSONB DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_user_role TEXT;
+    v_product_record RECORD;
+    v_var_elem JSONB;
+    v_media_elem JSONB;
+    v_variation_id UUID;
+    v_media_id UUID;
+    v_updated_variations JSONB := '[]'::jsonb;
+    v_updated_media JSONB := '[]'::jsonb;
+    v_result JSONB;
+BEGIN
+    -- 1. Authorization Check (Verify admin role if executed within an authenticated user session)
+    IF auth.uid() IS NOT NULL THEN
+        SELECT role INTO v_user_role
+        FROM profiles
+        WHERE id = auth.uid();
+
+        IF v_user_role IS NULL OR v_user_role != 'admin' THEN
+            RAISE EXCEPTION 'Unauthorized: Only administrators can update products.';
+        END IF;
+    END IF;
+
+    -- 2. Verify product exists
+    IF NOT EXISTS (SELECT 1 FROM products WHERE id = p_product_id) THEN
+        RAISE EXCEPTION 'Product with ID % not found.', p_product_id;
+    END IF;
+
+    -- 3. Update Main Product Record
+    UPDATE products
+    SET 
+        name = COALESCE(p_name, name),
+        sku = COALESCE(p_sku, sku),
+        slug = COALESCE(p_slug, slug),
+        description = COALESCE(p_description, description),
+        gender = COALESCE(p_gender, gender),
+        is_active = COALESCE(p_is_active, is_active),
+        price = COALESCE(p_price, price),
+        discount_percentage = COALESCE(p_discount_percentage, discount_percentage),
+        stock = COALESCE(p_stock, stock),
+        length = COALESCE(p_length, length),
+        size = COALESCE(p_size, size),
+        meta_title = COALESCE(p_meta_title, meta_title),
+        meta_description = COALESCE(p_meta_description, meta_description),
+        meta_keywords = COALESCE(p_meta_keywords, meta_keywords),
+        collection_id = COALESCE(p_collection_id, collection_id),
+        category_id = COALESCE(p_category_id, category_id),
+        sub_category_id = COALESCE(p_sub_category_id, sub_category_id),
+        diamond_shape_id = COALESCE(p_diamond_shape_id, diamond_shape_id),
+        updated_at = NOW()
+    WHERE id = p_product_id
+    RETURNING * INTO v_product_record;
+
+    -- 4. Update Product Variations (if variations JSON array is provided)
+    IF p_variations IS NOT NULL THEN
+        DELETE FROM product_variations WHERE product_id = p_product_id;
+
+        IF jsonb_typeof(p_variations) = 'array' AND jsonb_array_length(p_variations) > 0 THEN
+            FOR v_var_elem IN SELECT * FROM jsonb_array_elements(p_variations) LOOP
+                IF (v_var_elem->>'color_id') IS NOT NULL AND (v_var_elem->>'purity_id') IS NOT NULL THEN
+                    INSERT INTO product_variations (
+                        product_id,
+                        color_id,
+                        purity_id,
+                        sku,
+                        price,
+                        stock
+                    ) VALUES (
+                        p_product_id,
+                        (v_var_elem->>'color_id')::UUID,
+                        (v_var_elem->>'purity_id')::UUID,
+                        v_var_elem->>'sku',
+                        CASE 
+                            WHEN (v_var_elem->>'price') IS NOT NULL AND (v_var_elem->>'price') != '' 
+                            THEN (v_var_elem->>'price')::NUMERIC 
+                            ELSE COALESCE(v_product_record.price, 0.00) 
+                        END,
+                        CASE 
+                            WHEN (v_var_elem->>'stock') IS NOT NULL AND (v_var_elem->>'stock') != '' 
+                            THEN (v_var_elem->>'stock')::INT 
+                            ELSE 0 
+                        END
+                    )
+                    RETURNING id INTO v_variation_id;
+
+                    v_updated_variations := v_updated_variations || jsonb_build_object(
+                        'id', v_variation_id,
+                        'color_id', v_var_elem->>'color_id',
+                        'purity_id', v_var_elem->>'purity_id',
+                        'sku', v_var_elem->>'sku',
+                        'price', CASE WHEN (v_var_elem->>'price') IS NOT NULL AND (v_var_elem->>'price') != '' THEN (v_var_elem->>'price')::NUMERIC ELSE v_product_record.price END,
+                        'stock', CASE WHEN (v_var_elem->>'stock') IS NOT NULL AND (v_var_elem->>'stock') != '' THEN (v_var_elem->>'stock')::INT ELSE 0 END
+                    );
+                END IF;
+            END LOOP;
+        END IF;
+    END IF;
+
+    -- 5. Update Media Mappings per Color (if media_mappings JSON array is provided)
+    IF p_media_mappings IS NOT NULL THEN
+        DELETE FROM media_mapping WHERE product_id = p_product_id;
+
+        IF jsonb_typeof(p_media_mappings) = 'array' AND jsonb_array_length(p_media_mappings) > 0 THEN
+            FOR v_media_elem IN SELECT * FROM jsonb_array_elements(p_media_mappings) LOOP
+                IF (v_media_elem->>'color_id') IS NOT NULL THEN
+                    INSERT INTO media_mapping (
+                        product_id,
+                        color_id,
+                        thumbnail,
+                        images,
+                        video_url
+                    ) VALUES (
+                        p_product_id,
+                        (v_media_elem->>'color_id')::UUID,
+                        COALESCE(v_media_elem->>'thumbnail', ''),
+                        CASE 
+                            WHEN jsonb_typeof(v_media_elem->'images') = 'array' 
+                            THEN ARRAY(SELECT jsonb_array_elements_text(v_media_elem->'images')) 
+                            ELSE '{}'::text[] 
+                        END,
+                        v_media_elem->>'video_url'
+                    )
+                    RETURNING id INTO v_media_id;
+
+                    v_updated_media := v_updated_media || jsonb_build_object(
+                        'id', v_media_id,
+                        'color_id', v_media_elem->>'color_id',
+                        'thumbnail', COALESCE(v_media_elem->>'thumbnail', ''),
+                        'images', COALESCE(v_media_elem->'images', '[]'::jsonb),
+                        'video_url', v_media_elem->>'video_url'
+                    );
+                END IF;
+            END LOOP;
+        END IF;
+    END IF;
+
+    -- 6. Return Structured JSON Response
+    v_result := jsonb_build_object(
+        'success', true,
+        'product_id', p_product_id,
+        'product', to_jsonb(v_product_record),
+        'variations', v_updated_variations,
+        'media_mappings', v_updated_media
+    );
+
+    RETURN v_result;
+END;
+### Supabase RPC Function: `delete_product_with_media`
+
+```sql
+CREATE OR REPLACE FUNCTION delete_product_with_media(
+    p_product_id UUID
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_user_role TEXT;
+    v_media_urls JSONB := '[]'::jsonb;
+    v_rec RECORD;
+    v_img TEXT;
+    v_deleted_count INT := 0;
+    v_result JSONB;
+BEGIN
+    -- 1. Authorization Check (Verify admin role if executed within an authenticated user session)
+    IF auth.uid() IS NOT NULL THEN
+        SELECT role INTO v_user_role
+        FROM profiles
+        WHERE id = auth.uid();
+
+        IF v_user_role IS NULL OR v_user_role != 'admin' THEN
+            RAISE EXCEPTION 'Unauthorized: Only administrators can delete products.';
+        END IF;
+    END IF;
+
+    -- 2. Verify product exists
+    IF NOT EXISTS (SELECT 1 FROM products WHERE id = p_product_id) THEN
+        RAISE EXCEPTION 'Product with ID % not found.', p_product_id;
+    END IF;
+
+    -- 3. Collect media URLs associated with this product prior to deletion
+    FOR v_rec IN SELECT thumbnail, images, video_url FROM media_mapping WHERE product_id = p_product_id LOOP
+        IF v_rec.thumbnail IS NOT NULL AND v_rec.thumbnail != '' THEN
+            v_media_urls := v_media_urls || to_jsonb(v_rec.thumbnail);
+        END IF;
+        
+        IF v_rec.images IS NOT NULL THEN
+            FOREACH v_img IN ARRAY v_rec.images LOOP
+                IF v_img IS NOT NULL AND v_img != '' THEN
+                    v_media_urls := v_media_urls || to_jsonb(v_img);
+                END IF;
+            END LOOP;
+        END IF;
+
+        IF v_rec.video_url IS NOT NULL AND v_rec.video_url != '' THEN
+            v_media_urls := v_media_urls || to_jsonb(v_rec.video_url);
+        END IF;
+    END LOOP;
+
+    -- 4. Delete child records (media_mapping & product_variations)
+    DELETE FROM media_mapping WHERE product_id = p_product_id;
+    DELETE FROM product_variations WHERE product_id = p_product_id;
+
+    -- 5. Delete parent product record
+    DELETE FROM products WHERE id = p_product_id;
+
+    GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
+
+    -- 6. Construct and Return Response
+    v_result := jsonb_build_object(
+        'success', true,
+        'deleted_product_id', p_product_id,
+        'deleted_count', v_deleted_count,
+        'media_urls', v_media_urls
+    );
+
+    RETURN v_result;
+END;
+$$;
+```

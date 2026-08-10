@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 
 export const NAV_ITEMS = [
@@ -24,6 +25,7 @@ export const NAV_ITEMS = [
   { id: "collections", label: "Collection", icon: Layers },
   { id: "diamond", label: "Diamond Shapes", icon: Gem },
   { id: "ring_size", label: "Ring Size", icon: Ruler },
+  { id: "carats", label: "Carat Purity", icon: Sparkles },
   { id: "gold_color", label: "Gold Color", icon: Palette },
   { id: "coupon_codes", label: "Coupon Code", icon: Ticket },
   { id: "contact_requests", label: "Contact Requests", icon: MessageSquare },

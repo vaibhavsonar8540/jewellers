@@ -18,6 +18,9 @@ import {
   Layers,
   Info,
   CheckCircle2,
+  Loader2,
+  Edit3,
+  AlertTriangle,
 } from "lucide-react";
 import ProductCard from "./ProductCard";
 
@@ -35,6 +38,11 @@ import {
   fetchSubCategoriesAction,
   fetchColorsAction,
   fetchPuritiesAction,
+  fetchProductsAction,
+  createProductAction,
+  updateProductAction,
+  deleteProductAction,
+  toggleProductActiveAction,
 } from "@/action/common.action";
 
 // Available Master Data References (from Supabase schema)
@@ -80,7 +88,27 @@ export default function ProductView({ onBack }) {
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
   const [selectedGenderFilter, setSelectedGenderFilter] = useState("all");
 
-  // Fetch collections, categories, sub-categories, colors, and purities from database on mount
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+
+  // Product List State
+  const [products, setProducts] = useState([]);
+
+  const loadProducts = React.useCallback(async () => {
+    setIsLoadingProducts(true);
+    try {
+      const res = await fetchProductsAction();
+      if (res?.data) {
+        setProducts(res.data);
+      }
+    } catch (err) {
+      console.error("Error loading products:", err);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, []);
+
+  // Fetch collections, categories, sub-categories, colors, purities, and products from database on mount
   React.useEffect(() => {
     const loadTaxonomies = async () => {
       try {
@@ -102,7 +130,8 @@ export default function ProductView({ onBack }) {
     };
 
     loadTaxonomies();
-  }, [dispatch]);
+    loadProducts();
+  }, [dispatch, loadProducts]);
 
   // Comprehensive Product Form State
   const [formData, setFormData] = useState({
@@ -299,14 +328,11 @@ export default function ProductView({ onBack }) {
     }));
   };
 
-  // Initial Product List (empty by default)
-  const [products, setProducts] = useState([]);
-
   // Selected Variations State (empty by default)
   const [selectedCarats, setSelectedCarats] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
 
-  // Color Media Mapping State { [colorName]: { thumbnail: null, images: [], video_url: '', video_name: '' } }
+  // Color Media Mapping State { [colorName]: { thumbnail: null, thumbnailFile: null, images: [], imageFiles: [], video_url: '', videoFile: null } }
   const [colorMedia, setColorMedia] = useState({});
 
   // Name Input Handler
@@ -337,7 +363,7 @@ export default function ProductView({ onBack }) {
       setSelectedColors((prev) => [...prev, foundColor]);
       setColorMedia((prev) => ({
         ...prev,
-        [foundColor.name]: { thumbnail: null, images: [], video_url: "" },
+        [foundColor.name]: { thumbnail: null, thumbnailFile: null, images: [], imageFiles: [], video_url: "", videoFile: null },
       }));
     }
   };
@@ -363,6 +389,7 @@ export default function ProductView({ onBack }) {
       [colorName]: {
         ...(prev[colorName] || { images: [], video_url: "" }),
         thumbnail: url,
+        thumbnailFile: file,
       },
     }));
   };
@@ -373,18 +400,21 @@ export default function ProductView({ onBack }) {
       [colorName]: {
         ...(prev[colorName] || { images: [], video_url: "" }),
         thumbnail: null,
+        thumbnailFile: null,
       },
     }));
   };
 
   const handleDetailImagesChange = (colorName, files) => {
     if (!files || files.length === 0) return;
-    const urls = Array.from(files).map((f) => URL.createObjectURL(f));
+    const newFilesArray = Array.from(files);
+    const urls = newFilesArray.map((f) => URL.createObjectURL(f));
     setColorMedia((prev) => ({
       ...prev,
       [colorName]: {
         ...(prev[colorName] || { thumbnail: null, video_url: "" }),
         images: [...(prev[colorName]?.images || []), ...urls],
+        imageFiles: [...(prev[colorName]?.imageFiles || []), ...newFilesArray],
       },
     }));
   };
@@ -396,6 +426,9 @@ export default function ProductView({ onBack }) {
       [colorName]: {
         ...prev[colorName],
         images: (prev[colorName]?.images || []).filter(
+          (_, idx) => idx !== imageIndex
+        ),
+        imageFiles: (prev[colorName]?.imageFiles || []).filter(
           (_, idx) => idx !== imageIndex
         ),
       },
@@ -411,6 +444,7 @@ export default function ProductView({ onBack }) {
         ...(prev[colorName] || { thumbnail: null, images: [] }),
         video_url: url,
         video_name: file.name,
+        videoFile: file,
       },
     }));
   };
@@ -422,12 +456,21 @@ export default function ProductView({ onBack }) {
         ...(prev[colorName] || { thumbnail: null, images: [] }),
         video_url: "",
         video_name: "",
+        videoFile: null,
       },
     }));
   };
 
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [deleteModalState, setDeleteModalState] = useState({
+    isOpen: false,
+    product: null,
+    isDeleting: false,
+  });
+
   // Reset and Open Product Creation Form
   const handleOpenCreate = () => {
+    setEditingProductId(null);
     setFormData({
       name: "",
       description: "",
@@ -452,12 +495,194 @@ export default function ProductView({ onBack }) {
     setViewMode("create");
   };
 
-  // Submit Handler
-  const handleSubmitProduct = (e) => {
-    e.preventDefault();
-    if (!formData.name || !formData.price) return;
+  // Populate form for Editing Product
+  const handleEditProduct = (product) => {
+    setEditingProductId(product.id);
+    setFormData({
+      name: product.name || "",
+      description: product.description || "",
+      sku: product.sku || "",
+      price: product.price ? String(product.price) : "",
+      stock: product.stock ? String(product.stock) : "",
+      collection_id: product.collection_id || "",
+      collection: product.collection || "",
+      category_id: product.category_id || "",
+      category: product.category || "",
+      sub_category_id: product.sub_category_id || "",
+      sub_category: product.sub_category || "",
+      is_active: product.is_active ?? true,
+      gender: product.gender || null,
+      ring_size: product.ring_size || product.size || "",
+      weight: product.weight || "",
+      size: product.size || "",
+    });
 
-    // Check mandatory thumbnails
+    // Populate selected carats
+    let carats = [];
+    if (product.carats && Array.isArray(product.carats) && product.carats.length > 0) {
+      carats = [...product.carats];
+    }
+
+    const vars = product.product_variations || product.rawVariations || [];
+    vars.forEach((v) => {
+      const cVal = (typeof v.purity === "object" ? v.purity?.carat : v.purity) || v.carat || v.carat_purity;
+      if (cVal) carats.push(cVal);
+
+      if (v.sku) {
+        const skuMatches = v.sku.match(/\b(10K|14K|16K|18K|20K|22K|24K)\b/gi);
+        if (skuMatches) skuMatches.forEach((m) => carats.push(m.toUpperCase()));
+      }
+    });
+
+    // Fallback check on product SKU, name, or description for carat patterns
+    if (carats.length === 0) {
+      const textToSearch = `${product.sku || ""} ${product.name || ""} ${product.description || ""}`;
+      const matches = textToSearch.match(/\b(10K|14K|16K|18K|20K|22K|24K)\b/gi);
+      if (matches) {
+        matches.forEach((m) => carats.push(m.toUpperCase()));
+      }
+    }
+
+    setSelectedCarats([...new Set(carats)]);
+
+    // Populate selected colors & media mapping
+    const colorList = [];
+    const mediaObj = {};
+
+    const rawMedia = product.media_mapping || product.rawMedia || [];
+
+    if (rawMedia && rawMedia.length > 0) {
+      rawMedia.forEach((m) => {
+        const foundCol = colorOptions.find(
+          (c) => c.id === m.color_id || c.name.toLowerCase() === (m.color_name || "").toLowerCase()
+        );
+        const colObj = foundCol || {
+          id: m.color_id || `col-${m.color_name || 'Gold'}`,
+          name: m.color_name || (foundCol ? foundCol.name : "Gold"),
+          hex: foundCol ? foundCol.hex : "#FFD700",
+        };
+
+        if (colObj.name && !colorList.some((c) => c.name.toLowerCase() === colObj.name.toLowerCase())) {
+          colorList.push(colObj);
+        }
+
+        mediaObj[colObj.name] = {
+          thumbnail: m.thumbnail || null,
+          thumbnailFile: null,
+          images: m.images || [],
+          imageFiles: [],
+          video_url: m.video_url || "",
+          videoFile: null,
+        };
+      });
+    }
+
+    // Check product.colorMedia (map of colorName -> media object)
+    if (product.colorMedia && Object.keys(product.colorMedia).length > 0) {
+      Object.entries(product.colorMedia).forEach(([colorName, media]) => {
+        const foundCol = colorOptions.find(
+          (c) => c.name.toLowerCase() === colorName.toLowerCase()
+        );
+        const colObj = foundCol || {
+          id: `col-${colorName}`,
+          name: colorName,
+          hex: foundCol ? foundCol.hex : "#FFD700",
+        };
+
+        if (!colorList.some((c) => c.name.toLowerCase() === colObj.name.toLowerCase())) {
+          colorList.push(colObj);
+        }
+
+        if (!mediaObj[colObj.name] || (!mediaObj[colObj.name].thumbnail && media.thumbnail)) {
+          mediaObj[colObj.name] = {
+            thumbnail: media.thumbnail || null,
+            thumbnailFile: null,
+            images: media.images || [],
+            imageFiles: [],
+            video_url: media.video_url || "",
+            videoFile: null,
+          };
+        }
+      });
+    }
+
+    // Fallback check for product.colors string array e.g. ["Yellow Gold", "Rose Gold"]
+    if (colorList.length === 0 && product.colors && Array.isArray(product.colors)) {
+      product.colors.forEach((colorName) => {
+        const foundCol = colorOptions.find(
+          (c) => c.name.toLowerCase() === colorName.toLowerCase()
+        );
+        const colObj = foundCol || {
+          id: `col-${colorName}`,
+          name: colorName,
+          hex: foundCol ? foundCol.hex : "#FFD700",
+        };
+
+        if (!colorList.some((c) => c.name.toLowerCase() === colObj.name.toLowerCase())) {
+          colorList.push(colObj);
+        }
+
+        if (!mediaObj[colObj.name]) {
+          mediaObj[colObj.name] = {
+            thumbnail: product.image || null,
+            thumbnailFile: null,
+            images: [],
+            imageFiles: [],
+            video_url: "",
+            videoFile: null,
+          };
+        }
+      });
+    }
+
+    setSelectedColors(colorList);
+    setColorMedia(mediaObj);
+    setViewMode("create");
+  };
+
+  // Delete Modal Handlers
+  const handleOpenDeleteModal = (product) => {
+    setDeleteModalState({ isOpen: true, product, isDeleting: false });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModalState.product) return;
+    setDeleteModalState((prev) => ({ ...prev, isDeleting: true }));
+
+    try {
+      const res = await deleteProductAction(deleteModalState.product.id);
+      if (res.error) {
+        alert(`Failed to delete product: ${res.error.message || "Unknown error."}`);
+      } else {
+        setProducts((prev) => prev.filter((p) => p.id !== deleteModalState.product.id));
+      }
+    } catch (err) {
+      console.error("Delete product error:", err);
+      alert("An error occurred while deleting product.");
+    } finally {
+      setDeleteModalState({ isOpen: false, product: null, isDeleting: false });
+    }
+  };
+
+  // Submit Handler
+  const handleSubmitProduct = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.price) {
+      alert("Product Name and Price are required!");
+      return;
+    }
+
+    if (!formData.collection_id) {
+      alert("Please select a Collection for the product!");
+      return;
+    }
+
+    if (!formData.category_id) {
+      alert("Please select a Category for the product!");
+      return;
+    }
+
+    // Check mandatory thumbnails if colors are selected
     for (const colorObj of selectedColors) {
       const media = colorMedia[colorObj.name];
       if (!media || !media.thumbnail) {
@@ -466,64 +691,84 @@ export default function ProductView({ onBack }) {
       }
     }
 
-    const firstColor = selectedColors[0]?.name;
-    const mainThumbnail =
-      (firstColor && colorMedia[firstColor]?.thumbnail) || "";
+    setIsSubmitting(true);
 
-    const generatedSlug = formData.name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-");
+    try {
+      const payload = {
+        productId: editingProductId,
+        formData,
+        selectedCarats,
+        selectedColors,
+        colorMedia,
+        reduxPurities,
+      };
 
-    const newProd = {
-      id: `prod-${Date.now()}`,
-      name: formData.name,
-      slug: generatedSlug,
-      sku: formData.sku || `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
-      category: formData.category,
-      collection: formData.collection,
-      gender: formData.gender,
-      is_active: formData.is_active,
-      price: parseFloat(formData.price) || 0,
-      stock: parseInt(formData.stock, 10) || 0,
-      image: mainThumbnail,
-      carats: selectedCarats,
-      colors: selectedColors.map((c) => c.name),
-      colorMedia: colorMedia,
-    };
+      let res = null;
+      if (editingProductId) {
+        res = await updateProductAction(payload);
+      } else {
+        res = await createProductAction(payload);
+      }
 
-    setProducts((prev) => [newProd, ...prev]);
-    setViewMode("list"); // return to product list screen
+      if (res.error) {
+        alert(`Failed to ${editingProductId ? "update" : "add"} product: ${res.error.message || "Unexpected database error."}`);
+        setIsSubmitting(false);
+        return;
+      }
 
-    // Reset Form
-    setFormData({
-      name: "",
-      description: "",
-      sku: "",
-      price: "",
-      stock: "",
-      collection_id: "",
-      collection: "",
-      category_id: "",
-      category: "",
-      sub_category_id: "",
-      sub_category: "",
-      is_active: true,
-      gender: null,
-      ring_size: "",
-      weight: "",
-      size: "",
-    });
-    setSelectedCarats([]);
-    setSelectedColors([]);
-    setColorMedia({});
+      alert(`Product ${editingProductId ? "updated" : "added and published"} successfully!`);
+      await loadProducts();
+      setEditingProductId(null);
+      setViewMode("list");
+
+      // Reset Form
+      setFormData({
+        name: "",
+        description: "",
+        sku: "",
+        price: "",
+        stock: "",
+        collection_id: "",
+        collection: "",
+        category_id: "",
+        category: "",
+        sub_category_id: "",
+        sub_category: "",
+        is_active: true,
+        gender: null,
+        ring_size: "",
+        weight: "",
+        size: "",
+      });
+      setSelectedCarats([]);
+      setSelectedColors([]);
+      setColorMedia({});
+    } catch (err) {
+      console.error("Error submitting product:", err);
+      alert("An unexpected error occurred while saving the product.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const toggleProductActive = (id) => {
+  const toggleProductActive = async (id) => {
+    const target = products.find((p) => p.id === id);
+    if (!target) return;
+    const newStatus = !target.is_active;
+
+    // Optimistic UI update
     setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, is_active: !p.is_active } : p))
+      prev.map((p) => (p.id === id ? { ...p, is_active: newStatus } : p))
     );
+
+    try {
+      const res = await toggleProductActiveAction(id, newStatus);
+      if (res?.error) {
+        console.warn("Status update notice:", res.error.message);
+      }
+    } catch (err) {
+      console.error("Error toggling product status:", err);
+    }
   };
 
   const filteredProducts = products.filter((p) => {
@@ -567,10 +812,12 @@ export default function ProductView({ onBack }) {
             <div>
               <h2 className="text-xl font-bold tracking-wide text-gray-900 flex items-center gap-2">
                 <Package className="w-5 h-5 text-black" />
-                Add New Product
+                {editingProductId ? "Edit Product" : "Add New Product"}
               </h2>
               <p className="text-xs text-gray-500 font-medium">
-                Enter product details, variation carats/colors & color-specific media
+                {editingProductId
+                  ? "Update product metadata, carats, colors & media mappings"
+                  : "Enter product details, variation carats/colors & color-specific media"}
               </p>
             </div>
           </div>
@@ -1160,16 +1407,25 @@ export default function ProductView({ onBack }) {
           <div className="bg-white rounded-2xl border border-gray-200/80 p-5 shadow-xs flex items-center justify-end gap-3">
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={() => setViewMode("list")}
-              className="px-6 py-2.5 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+              className="px-6 py-2.5 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-7 py-2.5 rounded-xl bg-black text-white text-xs font-bold hover:bg-gray-900 transition-all shadow-md active:scale-95 cursor-pointer"
+              disabled={isSubmitting}
+              className="px-7 py-2.5 rounded-xl bg-black text-white text-xs font-bold hover:bg-gray-900 transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50 flex items-center gap-2"
             >
-              Save & Publish Product
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>{editingProductId ? "Updating Product..." : "Saving & Publishing..."}</span>
+                </>
+              ) : (
+                editingProductId ? "Update Product" : "Save & Publish Product"
+              )}
             </button>
           </div>
         </form>
@@ -1263,7 +1519,12 @@ export default function ProductView({ onBack }) {
       </div>
 
       {/* Grid View: 4 Cards Per Row */}
-      {filteredProducts.length === 0 ? (
+      {isLoadingProducts ? (
+        <div className="bg-white rounded-2xl border border-gray-200/80 p-12 text-center flex flex-col items-center justify-center space-y-3">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+          <p className="text-xs font-semibold text-gray-500">Loading products from database...</p>
+        </div>
+      ) : filteredProducts.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-200/80 p-12 text-center flex flex-col items-center justify-center space-y-3">
           <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-400">
             <Package className="w-6 h-6" />
@@ -1280,8 +1541,86 @@ export default function ProductView({ onBack }) {
               key={product.id}
               product={product}
               onToggleActive={toggleProductActive}
+              onEdit={handleEditProduct}
+              onDelete={handleOpenDeleteModal}
             />
           ))}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal Overlay */}
+      {deleteModalState.isOpen && deleteModalState.product && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 border border-gray-100 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-100">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 leading-snug">
+                  Delete Product?
+                </h3>
+                <p className="text-xs text-gray-500 font-medium">
+                  This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-200/80 flex items-center gap-3">
+              {deleteModalState.product.image ? (
+                <img
+                  src={deleteModalState.product.image}
+                  alt={deleteModalState.product.name}
+                  className="w-12 h-12 rounded-xl object-cover border border-gray-200 shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-xl bg-gray-200 flex items-center justify-center text-gray-400 shrink-0">
+                  <Package className="w-5 h-5" />
+                </div>
+              )}
+              <div className="truncate">
+                <h4 className="font-bold text-sm text-gray-900 truncate">
+                  {deleteModalState.product.name}
+                </h4>
+                <span className="text-[11px] font-mono text-gray-500">
+                  SKU: {deleteModalState.product.sku}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Are you sure you want to delete this product? All product variations, media mapping records, and uploaded storage images/videos will be permanently removed.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={deleteModalState.isDeleting}
+                onClick={() => setDeleteModalState({ isOpen: false, product: null, isDeleting: false })}
+                className="px-5 py-2.5 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteModalState.isDeleting}
+                onClick={handleConfirmDelete}
+                className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              >
+                {deleteModalState.isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Confirm Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
