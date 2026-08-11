@@ -45,33 +45,7 @@ import {
   toggleProductActiveAction,
 } from "@/action/common.action";
 
-// Available Master Data References (from Supabase schema)
-const AVAILABLE_CARATS = ["14K", "16K", "18K", "22K", "24K"];
-const AVAILABLE_COLORS = [
-  { id: "col-1", name: "Yellow Gold", hex: "#FFD700" },
-  { id: "col-2", name: "Rose Gold", hex: "#B76E79" },
-  { id: "col-3", name: "White Gold", hex: "#E5E4E2" },
-  { id: "col-4", name: "Silver", hex: "#C0C0C0" },
-  { id: "col-5", name: "Platinum", hex: "#D5D5D5" },
-];
 
-const DEFAULT_COLLECTIONS = [
-  "Bridal Collection",
-  "Heritage Gold",
-  "Modern Romance",
-  "Gemstone Luxury",
-  "Royal Solitaire",
-  "Daily Elegance",
-];
-
-const DEFAULT_CATEGORIES = [
-  "Rings",
-  "Necklaces",
-  "Earrings",
-  "Bands",
-  "Bracelets",
-  "Pendants",
-];
 
 export default function ProductView({ onBack }) {
   const dispatch = useDispatch();
@@ -153,19 +127,18 @@ export default function ProductView({ onBack }) {
     size: "",
   });
 
-  // Cascading Available Collections
+  // Cascading Available Collections from Database
   const collectionOptions = React.useMemo(() => {
     if (reduxCollections.length > 0) {
       return reduxCollections.map((c) =>
         typeof c === "string" ? { id: c, name: c } : { id: c.id, name: c.name }
       );
     }
-    return DEFAULT_COLLECTIONS.map((c) => ({ id: c, name: c }));
+    return [];
   }, [reduxCollections]);
 
   // Cascading Available Categories based on selected Collection
   const availableCategories = React.useMemo(() => {
-    // If no collection is selected yet, return empty list
     if (!formData.collection_id && !formData.collection) return [];
 
     if (reduxCategories.length > 0) {
@@ -179,20 +152,11 @@ export default function ProductView({ onBack }) {
       return filtered.length > 0 ? filtered : reduxCategories;
     }
 
-    // Default categories list fallback
-    return [
-      { id: "Rings", name: "Rings" },
-      { id: "Necklaces", name: "Necklaces" },
-      { id: "Earrings", name: "Earrings" },
-      { id: "Bands", name: "Bands" },
-      { id: "Bracelets", name: "Bracelets" },
-      { id: "Pendants", name: "Pendants" },
-    ];
+    return [];
   }, [reduxCategories, formData.collection_id, formData.collection]);
 
   // Cascading Available Sub-Categories based on selected Category
   const availableSubCategories = React.useMemo(() => {
-    // If no category is selected yet, return empty list
     if (!formData.category_id && !formData.category) return [];
 
     if (reduxSubCategories.length > 0) {
@@ -206,57 +170,10 @@ export default function ProductView({ onBack }) {
       return filtered.length > 0 ? filtered : reduxSubCategories;
     }
 
-    // Fallback subcategories mapped per category name
-    const catLower = (formData.category || "").toLowerCase();
-    if (catLower.includes("ring")) {
-      return [
-        { id: "Solitaire Rings", name: "Solitaire Rings" },
-        { id: "Engagement Rings", name: "Engagement Rings" },
-        { id: "Band Rings", name: "Band Rings" },
-        { id: "Cocktail Rings", name: "Cocktail Rings" },
-        { id: "Stackable Rings", name: "Stackable Rings" },
-      ];
-    } else if (catLower.includes("necklace")) {
-      return [
-        { id: "Chokers", name: "Chokers" },
-        { id: "Pendant Necklaces", name: "Pendant Necklaces" },
-        { id: "Long Chains", name: "Long Chains" },
-        { id: "Statement Necklaces", name: "Statement Necklaces" },
-      ];
-    } else if (catLower.includes("earring")) {
-      return [
-        { id: "Stud Earrings", name: "Stud Earrings" },
-        { id: "Drop & Dangle", name: "Drop & Dangle" },
-        { id: "Hoop Earrings", name: "Hoop Earrings" },
-        { id: "Ear Cuffs", name: "Ear Cuffs" },
-      ];
-    } else if (catLower.includes("band")) {
-      return [
-        { id: "Diamond Bands", name: "Diamond Bands" },
-        { id: "Eternity Bands", name: "Eternity Bands" },
-        { id: "Gold Bands", name: "Gold Bands" },
-      ];
-    } else if (catLower.includes("bracelet")) {
-      return [
-        { id: "Tennis Bracelets", name: "Tennis Bracelets" },
-        { id: "Bangles", name: "Bangles" },
-        { id: "Charm Bracelets", name: "Charm Bracelets" },
-      ];
-    } else if (catLower.includes("pendant")) {
-      return [
-        { id: "Diamond Pendants", name: "Diamond Pendants" },
-        { id: "Gemstone Pendants", name: "Gemstone Pendants" },
-        { id: "Initial Pendants", name: "Initial Pendants" },
-      ];
-    }
-
-    return [
-      { id: "General", name: "General" },
-      { id: "Signature Edition", name: "Signature Edition" },
-    ];
+    return [];
   }, [reduxSubCategories, formData.category_id, formData.category]);
 
-  // Color options from Database / Redux or fallback
+  // Color options from Database / Redux
   const colorOptions = React.useMemo(() => {
     if (reduxColors.length > 0) {
       return reduxColors.map((c) => ({
@@ -265,16 +182,20 @@ export default function ProductView({ onBack }) {
         hex: c.hex_code || c.hex || "#E5C158",
       }));
     }
-    return AVAILABLE_COLORS;
+    return [];
   }, [reduxColors]);
 
-  // Carat purity options from Database / Redux or fallback
+  // Carat purity options fetched dynamically from Database / Redux
   const caratOptions = React.useMemo(() => {
-    if (reduxPurities.length > 0) {
-      return reduxPurities.map((p) => (typeof p === "string" ? p : p.carat));
+    if (reduxPurities && reduxPurities.length > 0) {
+      return reduxPurities
+        .map((p) => (typeof p === "string" ? p : p?.carat || p?.name))
+        .filter(Boolean);
     }
-    return AVAILABLE_CARATS;
+    return [];
   }, [reduxPurities]);
+
+
 
   // Handlers for Cascading Select Changes
   const handleCollectionChange = (e) => {
@@ -469,8 +390,16 @@ export default function ProductView({ onBack }) {
   });
 
   // Reset and Open Product Creation Form
-  const handleOpenCreate = () => {
+  const handleOpenCreate = async () => {
     setEditingProductId(null);
+    if (!reduxPurities || reduxPurities.length === 0) {
+      try {
+        const purityRes = await fetchPuritiesAction();
+        if (purityRes?.data) dispatch(setPurities(purityRes.data));
+      } catch (e) {
+        console.warn("Failed fetching purities on create:", e);
+      }
+    }
     setFormData({
       name: "",
       description: "",
@@ -496,7 +425,7 @@ export default function ProductView({ onBack }) {
   };
 
   // Populate form for Editing Product
-  const handleEditProduct = (product) => {
+  const handleEditProduct = async (product) => {
     setEditingProductId(product.id);
     setFormData({
       name: product.name || "",
@@ -517,6 +446,20 @@ export default function ProductView({ onBack }) {
       size: product.size || "",
     });
 
+    // Ensure purities master list is loaded from database
+    let activePurities = reduxPurities || [];
+    if (activePurities.length === 0) {
+      try {
+        const purityRes = await fetchPuritiesAction();
+        if (purityRes?.data) {
+          activePurities = purityRes.data;
+          dispatch(setPurities(purityRes.data));
+        }
+      } catch (e) {
+        console.warn("Failed fetching purities on edit:", e);
+      }
+    }
+
     // Populate selected carats
     let carats = [];
     if (product.carats && Array.isArray(product.carats) && product.carats.length > 0) {
@@ -525,7 +468,11 @@ export default function ProductView({ onBack }) {
 
     const vars = product.product_variations || product.rawVariations || [];
     vars.forEach((v) => {
-      const cVal = (typeof v.purity === "object" ? v.purity?.carat : v.purity) || v.carat || v.carat_purity;
+      let cVal = (typeof v.purity === "object" ? v.purity?.carat : v.purity) || v.carat || v.carat_purity;
+      if (!cVal && v.purity_id && activePurities.length > 0) {
+        const foundPurity = activePurities.find((p) => p.id === v.purity_id);
+        if (foundPurity?.carat) cVal = foundPurity.carat;
+      }
       if (cVal) carats.push(cVal);
 
       if (v.sku) {
@@ -1490,14 +1437,13 @@ export default function ProductView({ onBack }) {
               className="text-xs font-semibold text-gray-700 bg-transparent outline-none cursor-pointer"
             >
               <option value="all">All Categories</option>
-              {(reduxCategories.length > 0
-                ? reduxCategories.map((c) => (typeof c === "string" ? c : c.name))
-                : DEFAULT_CATEGORIES
-              ).map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
+              {(reduxCategories || [])
+                .map((c) => (typeof c === "string" ? c : c.name))
+                .map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
             </select>
           </div>
 

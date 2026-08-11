@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import CustomImg from "@/components/CustomImg";
 import { supabase } from "@/lib/db";
@@ -153,12 +153,38 @@ const DEFAULT_HIERARCHY = [
   },
 ];
 
+const makeSlug = (str) =>
+  (str || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-");
+
 export default function NavigationHeader() {
   const [navTree, setNavTree] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeHoverId, setActiveHoverId] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedMobileItem, setExpandedMobileItem] = useState(null);
+
+  const closeTimeoutRef = useRef(null);
+
+  const handleMouseEnterItem = (id) => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setActiveHoverId(id);
+  };
+
+  const handleMouseLeaveItem = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      setActiveHoverId(null);
+    }, 250);
+  };
 
   // Fetch Collections, Categories, and Sub-Categories from Supabase
   useEffect(() => {
@@ -245,17 +271,18 @@ export default function NavigationHeader() {
             navTree.map((item) => {
               const hasCategories = item.categories && item.categories.length > 0;
               const isHovered = activeHoverId === item.id;
+              const colSlug = makeSlug(item.slug || item.name);
 
               return (
                 <div
                   key={item.id || item.slug}
                   className="static group"
-                  onMouseEnter={() => setActiveHoverId(item.id)}
-                  onMouseLeave={() => setActiveHoverId(null)}
+                  onMouseEnter={() => handleMouseEnterItem(item.id)}
+                  onMouseLeave={handleMouseLeaveItem}
                 >
                   <Link
-                    href={`/shop?collection=${item.slug || item.id}`}
-                    className={`text-xs xl:text-sm font-semibold tracking-wider py-2 transition-all cursor-pointer uppercase font-sans ${
+                    href={`/collection/${colSlug}`}
+                    className={`text-xs xl:text-sm font-semibold tracking-wider py-2.5 transition-all cursor-pointer uppercase font-sans block ${
                       isHovered
                         ? "text-black font-extrabold border-b-2 border-black pb-1.5"
                         : "text-gray-700 hover:text-black"
@@ -266,47 +293,60 @@ export default function NavigationHeader() {
 
                   {/* Mega-Menu 100% Full-Width White Div Dropdown Panel */}
                   {hasCategories && isHovered && (
-                    <div className="absolute left-0 right-0 w-full bg-white border-y border-gray-200 shadow-2xl z-50 animate-in fade-in duration-150 top-full">
+                    <div
+                      className="absolute left-0 right-0 w-full bg-white border-y border-gray-200 shadow-2xl z-50 animate-in fade-in duration-150 top-full pt-1"
+                      onMouseEnter={() => handleMouseEnterItem(item.id)}
+                      onMouseLeave={handleMouseLeaveItem}
+                    >
                       <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-12 gap-8 text-left bg-white">
                         
                         {/* Categories Columns (Left 7-8 Cols) */}
                         <div className="col-span-8 grid grid-cols-5 gap-6">
-                          {item.categories.map((cat, idx) => (
-                            <div key={cat.id || idx} className="flex flex-col justify-between space-y-3">
-                              <div>
-                                <h4 className="font-serif font-bold text-sm text-gray-900 mb-2.5 tracking-wide">
-                                  {cat.name}
-                                </h4>
+                          {item.categories.map((cat, idx) => {
+                            const catSlug = makeSlug(cat.slug || cat.name);
+                            return (
+                              <div key={cat.id || idx} className="flex flex-col justify-between space-y-3">
+                                <div>
+                                  <Link
+                                    href={`/collection/${colSlug}/${catSlug}`}
+                                    className="font-serif font-bold text-sm text-gray-900 mb-2.5 tracking-wide block hover:text-amber-800 transition-colors"
+                                  >
+                                    {cat.name}
+                                  </Link>
 
-                                {cat.sub_categories && cat.sub_categories.length > 0 ? (
-                                  <ul className="space-y-1.5">
-                                    {cat.sub_categories.map((sub, sIdx) => (
-                                      <li key={sub.id || sIdx}>
-                                        <Link
-                                          href={`/shop?subcategory=${sub.slug || sub.id}`}
-                                          className="text-xs text-gray-600 hover:text-black transition-colors block font-sans"
-                                        >
-                                          {sub.name}
-                                        </Link>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="text-xs text-gray-400 italic">Explore {cat.name}</p>
-                                )}
-                              </div>
+                                  {cat.sub_categories && cat.sub_categories.length > 0 ? (
+                                    <ul className="space-y-1.5">
+                                      {cat.sub_categories.map((sub, sIdx) => {
+                                        const subSlug = makeSlug(sub.slug || sub.name);
+                                        return (
+                                          <li key={sub.id || sIdx}>
+                                            <Link
+                                              href={`/collection/${colSlug}/${catSlug}/${subSlug}`}
+                                              className="text-xs text-gray-600 hover:text-black transition-colors block font-sans"
+                                            >
+                                              {sub.name}
+                                            </Link>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                  ) : (
+                                    <p className="text-xs text-gray-400 italic">Explore {cat.name}</p>
+                                  )}
+                                </div>
 
-                              {/* View All Button per Category */}
-                              <div className="pt-2">
-                                <Link
-                                  href={`/shop?category=${cat.slug || cat.id}`}
-                                  className="inline-block bg-[#1E2E48] hover:bg-black text-white text-[11px] font-semibold px-4 py-1.5 rounded-xs transition-colors shadow-2xs tracking-wide"
-                                >
-                                  View All
-                                </Link>
+                                {/* View All Button per Category */}
+                                <div className="pt-2">
+                                  <Link
+                                    href={`/collection/${colSlug}/${catSlug}`}
+                                    className="inline-block bg-[#1E2E48] hover:bg-black text-white text-[11px] font-semibold px-4 py-1.5 rounded-xs transition-colors shadow-2xs tracking-wide"
+                                  >
+                                    View All
+                                  </Link>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
 
                         {/* Right Collection Banner & Image Column (4 Cols) */}
@@ -329,7 +369,7 @@ export default function NavigationHeader() {
 
                           <div className="pt-2">
                             <Link
-                              href={`/shop?collection=${item.slug || item.id}`}
+                              href={`/collection/${colSlug}`}
                               className="font-semibold text-xs text-gray-900 hover:text-black underline underline-offset-4 tracking-wide uppercase"
                             >
                               {item.featured_link_text || "Shop Collection"}
@@ -371,7 +411,7 @@ export default function NavigationHeader() {
           </button>
 
           <Link
-            href="/shop"
+            href="/collection"
             className="text-xs font-bold text-black uppercase hover:underline flex items-center gap-1"
           >
             <span>All Jewelry</span>
@@ -401,12 +441,13 @@ export default function NavigationHeader() {
             {navTree.map((item) => {
               const isExpanded = expandedMobileItem === item.id;
               const hasCategories = item.categories && item.categories.length > 0;
+              const colSlug = makeSlug(item.slug || item.name);
 
               return (
                 <div key={item.id || item.slug} className="border-b border-gray-100 pb-2">
                   <div className="flex items-center justify-between py-2">
                     <Link
-                      href={`/shop?collection=${item.slug || item.id}`}
+                      href={`/collection/${colSlug}`}
                       onClick={() => setMobileMenuOpen(false)}
                       className="font-bold text-sm text-gray-900 uppercase tracking-wider"
                     >
@@ -426,26 +467,38 @@ export default function NavigationHeader() {
 
                   {hasCategories && isExpanded && (
                     <div className="pl-3 pt-2 space-y-3 border-l-2 border-gray-200 ml-1">
-                      {item.categories.map((cat) => (
-                        <div key={cat.id || cat.slug} className="space-y-1">
-                          <h5 className="font-serif font-bold text-xs text-gray-900">{cat.name}</h5>
-                          {cat.sub_categories && (
-                            <ul className="pl-2 space-y-1">
-                              {cat.sub_categories.map((sub) => (
-                                <li key={sub.id || sub.slug}>
-                                  <Link
-                                    href={`/shop?subcategory=${sub.slug || sub.id}`}
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="text-[11px] text-gray-600 hover:text-black block"
-                                  >
-                                    {sub.name}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      ))}
+                      {item.categories.map((cat) => {
+                        const catSlug = makeSlug(cat.slug || cat.name);
+                        return (
+                          <div key={cat.id || cat.slug} className="space-y-1">
+                            <Link
+                              href={`/collection/${colSlug}/${catSlug}`}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="font-serif font-bold text-xs text-gray-900 block hover:text-amber-800"
+                            >
+                              {cat.name}
+                            </Link>
+                            {cat.sub_categories && (
+                              <ul className="pl-2 space-y-1">
+                                {cat.sub_categories.map((sub) => {
+                                  const subSlug = makeSlug(sub.slug || sub.name);
+                                  return (
+                                    <li key={sub.id || sub.slug}>
+                                      <Link
+                                        href={`/collection/${colSlug}/${catSlug}/${subSlug}`}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className="text-[11px] text-gray-600 hover:text-black block"
+                                      >
+                                        {sub.name}
+                                      </Link>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

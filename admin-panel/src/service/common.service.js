@@ -724,12 +724,24 @@ export const createProductService = async ({
       for (const colorObj of selectedColors) {
         for (const caratVal of selectedCarats) {
           let foundPurity = (puritiesList || []).find(
-            (p) => (typeof p === "string" ? p : p.carat) === caratVal
+            (p) => (typeof p === "string" ? p : p?.carat || p?.name) === caratVal
           );
           let purityId = typeof foundPurity === "object" ? foundPurity?.id : null;
 
           if (!purityId && isUUID(caratVal)) {
             purityId = caratVal;
+          }
+
+          if (!purityId) {
+            const { data: newPurity } = await supabase
+              .from("purity")
+              .insert([{ carat: caratVal, price: 0.00 }])
+              .select()
+              .single();
+            if (newPurity?.id) {
+              purityId = newPurity.id;
+              if (Array.isArray(puritiesList)) puritiesList.push(newPurity);
+            }
           }
 
           if (purityId && isUUID(purityId)) {
@@ -992,12 +1004,24 @@ export const updateProductService = async ({
       for (const colorObj of selectedColors) {
         for (const caratVal of selectedCarats) {
           let foundPurity = (puritiesList || []).find(
-            (p) => (typeof p === "string" ? p : p.carat) === caratVal
+            (p) => (typeof p === "string" ? p : p?.carat || p?.name) === caratVal
           );
           let purityId = typeof foundPurity === "object" ? foundPurity?.id : null;
 
           if (!purityId && isUUID(caratVal)) {
             purityId = caratVal;
+          }
+
+          if (!purityId) {
+            const { data: newPurity } = await supabase
+              .from("purity")
+              .insert([{ carat: caratVal, price: 0.00 }])
+              .select()
+              .single();
+            if (newPurity?.id) {
+              purityId = newPurity.id;
+              if (Array.isArray(puritiesList)) puritiesList.push(newPurity);
+            }
           }
 
           if (purityId && isUUID(purityId)) {
