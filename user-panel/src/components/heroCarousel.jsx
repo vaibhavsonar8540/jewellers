@@ -10,6 +10,8 @@ const HeroCarousel = ({
   slides = [],
   autoPlay = true,
   autoPlayInterval = 4500,
+  showDots = false,
+  showArrows = false,
   className = "",
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -64,7 +66,7 @@ const HeroCarousel = ({
 
   return (
     <div
-      className={`relative w-full overflow-hidden select-none group bg-gray-300 ${className}`}
+      className={`relative w-full overflow-hidden select-none group bg-white ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
@@ -89,7 +91,7 @@ const HeroCarousel = ({
                   containerClassName={
                     mobileSrc ? "hidden lg:block w-full" : "w-full"
                   }
-                  className="w-full h-[800px] object-fill block"
+                  className="w-full h-[450px] sm:h-[600px] lg:h-[750px] object-cover block"
                 />
               )}
               {/* Mobile Image */}
@@ -139,7 +141,7 @@ const HeroCarousel = ({
                     <h1
                       className={
                         slide.titleClass ||
-                        "text-white !font-playfair font-semibold text-lg xss:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight drop-shadow-md"
+                        "text-white font-canela font-normal text-lg xss:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight drop-shadow-md"
                       }
                     >
                       {slide.title}
@@ -176,8 +178,8 @@ const HeroCarousel = ({
         })}
       </div>
 
-      {/* Navigation Arrows (Shown when more than 1 slide) */}
-      {slides.length > 1 && (
+      {/* Navigation Arrows (Shown when showArrows is true) */}
+      {showArrows && slides.length > 1 && (
         <>
           <button
             suppressHydrationWarning
@@ -199,7 +201,7 @@ const HeroCarousel = ({
       )}
 
       {/* Dot Indicators */}
-      {slides.length > 1 && (
+      {showDots && slides.length > 1 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2">
           {slides.map((_, index) => (
             <button

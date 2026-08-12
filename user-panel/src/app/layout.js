@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${robotoMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-secondary text-black font-sans">
+      <body className="min-h-full flex flex-col bg-white text-black font-sans">
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />

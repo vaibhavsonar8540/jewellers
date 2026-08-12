@@ -257,7 +257,7 @@ export default function NavigationHeader() {
   }, []);
 
   return (
-    <nav className="w-full bg-white border-b border-gray-200 font-sans relative z-40">
+    <nav className="w-full bg-white border-b border-gray-200 font-sans relative z-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         
         {/* Horizontal Nav Links Row */}

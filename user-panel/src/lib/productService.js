@@ -155,3 +155,75 @@ export async function fetchActiveProductsService() {
     };
   }
 }
+
+/**
+ * Fetch LATEST products dynamically filtered by collection name, slug, or ID.
+ * First tries Supabase RPC function 'get_latest_products_by_collection', with automatic fallback.
+ */
+export async function fetchLatestProductsByCollectionService(collectionNameOrSlug = null, limit = 8) {
+  try {
+    // 1. Attempt Supabase RPC execution
+    if (supabase) {
+      const { data: rpcData, error: rpcErr } = await supabase.rpc("get_latest_products_by_collection", {
+        p_collection_name: collectionNameOrSlug || null,
+        p_limit: limit || 8,
+      });
+
+      if (!rpcErr && rpcData && Array.isArray(rpcData)) {
+        return {
+          data: rpcData,
+          collection: rpcData[0]?.collection_name ? { name: rpcData[0].collection_name, id: rpcData[0].collection_id } : null,
+          error: null,
+        };
+      }
+    }
+
+    // 2. Client-side Query Fallback
+    const { data: allProducts, collections, error } = await fetchActiveProductsService();
+    if (error || !allProducts) {
+      return { data: [], collection: null, error };
+    }
+
+    let filtered = allProducts;
+    let targetCollection = null;
+
+    if (collectionNameOrSlug && collectionNameOrSlug.toLowerCase() !== "all") {
+      const searchTerm = collectionNameOrSlug.toLowerCase().trim();
+
+      targetCollection = (collections || []).find(
+        (c) =>
+          c.id === collectionNameOrSlug ||
+          (c.name && c.name.toLowerCase() === searchTerm) ||
+          (c.slug && c.slug.toLowerCase() === searchTerm)
+      );
+
+      filtered = allProducts.filter((prod) => {
+        const prodColName = (prod.collection_name || "").toLowerCase();
+        const prodColSlug = (prod.collection_slug || "").toLowerCase();
+        const prodColId = prod.collection_id;
+
+        return (
+          prodColId === collectionNameOrSlug ||
+          prodColName === searchTerm ||
+          prodColSlug === searchTerm ||
+          prodColName.includes(searchTerm)
+        );
+      });
+    }
+
+    // Sort by created_at DESC (latest arrivals first)
+    const latestProducts = filtered
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+      .slice(0, limit);
+
+    return {
+      data: latestProducts,
+      collection: targetCollection,
+      error: null,
+    };
+  } catch (err) {
+    console.error("fetchLatestProductsByCollectionService error:", err);
+    return { data: [], collection: null, error: err };
+  }
+}
+

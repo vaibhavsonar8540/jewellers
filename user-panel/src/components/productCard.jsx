@@ -78,14 +78,14 @@ export default function ProductCard({ product }) {
         {/* Bottom Single Row: Price on left, Color Swatches on right */}
         <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
           {/* Price */}
-          <div className="flex items-center text-xs font-bold text-gray-900 tracking-tight">
-            <span>₹</span>
+          <div className="flex gap-0.5 items-center text-sm font-bold text-gray-900 tracking-tight">
+            <span className="!text-xs">₹</span>
             <span>{product?.price ? product.price.toLocaleString("en-IN") : "0"}</span>
           </div>
 
           {/* Metal Color Circles Swatches */}
           {product?.colors && product.colors.length > 0 && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2.5 px-1">
               {product.colors.map((col) => {
                 const isActive = activeColorId === col.id;
                 return (
@@ -100,7 +100,7 @@ export default function ProductCard({ product }) {
                     onMouseEnter={() => setActiveColorId(col.id)}
                     className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
                       isActive
-                        ? "ring-2 ring-black ring-offset-1 scale-110"
+                        ? "ring-2 ring-black ring-offset-2 scale-110 z-10"
                         : "opacity-75 hover:opacity-100 hover:scale-105"
                     }`}
                     style={{ backgroundColor: col.hex_code || col.hex || "#FFD700" }}
