@@ -3,6 +3,9 @@ import Link from "next/link";
 import Image from "next/image";
 import HeroCarousel from "@/components/heroCarousel";
 import LatestArrivalsSection from "@/components/LatestArrivalsSection";
+import DiamondShapeSlider from "@/components/DiamondShapeSlider";
+import OurSelections from "@/components/OurSelections";
+import TrustFeatures from "@/components/TrustFeatures";
 
 // Import Hero Carousel Images from src/assets/hero
 import hero2 from "@/assets/hero/hero2.webp";
@@ -48,7 +51,7 @@ export default function Home() {
       </section>
 
       {/* Custom Ring Craftsmanship Section */}
-      <section className="px-6 sm:px-12 lg:px-20 max-w-7xl mx-auto py-16 sm:py-20">
+      <section className="px-6 sm:px-12 lg:px-20 mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           
           {/* Left Side: Text & Appointment CTA */}
@@ -64,7 +67,7 @@ export default function Home() {
             <div className="pt-2">
               <Link
                 href="/book-appointment"
-                className="inline-flex items-center justify-center bg-[#202A4E] text-white hover:bg-black text-xs sm:text-sm font-semibold tracking-widest uppercase px-8 py-4 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                className="inline-flex items-center justify-center bg-[#202A4E] text-white hover:bg-black text-xs sm:text-sm font-semibold tracking-widest uppercase px-8 py-4 rounded-none transition-colors duration-300"
               >
                 Book Appointment
               </Link>
@@ -92,6 +95,7 @@ export default function Home() {
           src={newArrivalBg}
           alt="New Arrivals Collection"
           fill
+          sizes="100vw"
           className="object-cover object-center"
           priority
         />
@@ -106,8 +110,8 @@ export default function Home() {
           </p>
           <div className="pt-4">
             <Link
-              href="/shop?sort=newest"
-              className="inline-flex items-center justify-center bg-white border border-white text-[#202A4E] hover:bg-transparent hover:text-white text-xs sm:text-sm font-semibold tracking-widest uppercase px-8 py-4 rounded-xl transition-all duration-300 shadow-xl"
+              href="/collection/jewellery"
+              className="inline-flex items-center justify-center bg-white border border-white text-[#202A4E] hover:bg-transparent hover:text-white text-xs sm:text-sm font-semibold tracking-widest uppercase px-8 py-4 rounded-none transition-all duration-300 shadow-xl"
             >
               Explore Collection
             </Link>
@@ -115,8 +119,17 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Diamond Shapes 3D Carousel Section */}
+      <DiamondShapeSlider />
+
       {/* Dynamic Latest Product Arrivals Grid */}
       <LatestArrivalsSection collectionName="all" limit={8} />
+
+      {/* Our Selections Collection Grid Section */}
+      <OurSelections />
+
+      {/* Trust Features & Guarantee Section */}
+      <TrustFeatures />
     </main>
   );
 }

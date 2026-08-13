@@ -10,7 +10,8 @@ import {
   Menu,
   X,
   Loader2,
-  Layers,
+  Gem,
+  CalendarCheck,
 } from "lucide-react";
 
 // Default Fallback Hierarchy matching the uploaded design
@@ -160,11 +161,22 @@ const makeSlug = (str) =>
     .replace(/[^\w\s-]/g, "")
     .replace(/\s+/g, "-");
 
-export default function NavigationHeader() {
+export default function NavigationHeader({
+  mobileMenuOpen: externalMobileMenuOpen,
+  setMobileMenuOpen: setExternalMobileMenuOpen,
+}) {
   const [navTree, setNavTree] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeHoverId, setActiveHoverId] = useState(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [internalMobileMenuOpen, setInternalMobileMenuOpen] = useState(false);
+
+  const mobileMenuOpen =
+    externalMobileMenuOpen !== undefined
+      ? externalMobileMenuOpen
+      : internalMobileMenuOpen;
+  const setMobileMenuOpen =
+    setExternalMobileMenuOpen || setInternalMobileMenuOpen;
+
   const [expandedMobileItem, setExpandedMobileItem] = useState(null);
 
   const closeTimeoutRef = useRef(null);
@@ -257,11 +269,13 @@ export default function NavigationHeader() {
   }, []);
 
   return (
-    <nav className="w-full bg-white border-b border-gray-200 font-sans relative z-30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        
-        {/* Horizontal Nav Links Row */}
-        <div className="hidden lg:flex items-center justify-center gap-8 xl:gap-12 py-3">
+    <>
+      {/* Sub Navigation Bar (Desktop Only: lg screens and up) */}
+      <nav className="w-full bg-white border-b border-gray-200 font-sans relative z-30 hidden lg:block">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+          
+          {/* Horizontal Nav Links Row */}
+          <div className="flex items-center justify-center gap-8 xl:gap-12 py-3">
           {loading ? (
             <div className="flex items-center gap-3 py-1 text-xs text-gray-400 font-medium">
               <Loader2 className="w-4 h-4 animate-spin text-gray-700" />
@@ -399,74 +413,42 @@ export default function NavigationHeader() {
             ABOUT US
           </Link>
         </div>
-
-        {/* Mobile Navigation Bar Header Trigger */}
-        <div className="lg:hidden flex items-center justify-between py-3">
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-gray-100 text-gray-900 text-xs font-bold tracking-wider uppercase cursor-pointer"
-          >
-            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-            <span>Jewelry Menu</span>
-          </button>
-
-          <Link
-            href="/collection"
-            className="text-xs font-bold text-black uppercase hover:underline flex items-center gap-1"
-          >
-            <span>All Jewelry</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
       </div>
+    </nav>
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile Drawer Menu (Positioned directly under main header on small screens) */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-0 top-[135px] bottom-0 bg-white z-50 overflow-y-auto p-5 border-t border-gray-200 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-            <h3 className="font-bold text-sm text-gray-900 uppercase tracking-wider flex items-center gap-2">
-              <Layers className="w-4 h-4 text-black" />
-              <span>Collections</span>
-            </h3>
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-1 rounded-lg text-gray-400 hover:text-gray-700"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="space-y-3">
+        <div className="lg:hidden fixed inset-x-0 top-[70px] sm:top-[85px] bottom-0 bg-white z-50 overflow-y-auto p-5 border-t border-gray-200 space-y-4">
+          <div className="divide-y divide-gray-100">
             {navTree.map((item) => {
               const isExpanded = expandedMobileItem === item.id;
               const hasCategories = item.categories && item.categories.length > 0;
               const colSlug = makeSlug(item.slug || item.name);
 
               return (
-                <div key={item.id || item.slug} className="border-b border-gray-100 pb-2">
-                  <div className="flex items-center justify-between py-2">
+                <div key={item.id || item.slug} className="py-3.5 first:pt-1">
+                  <div className="flex items-center justify-between">
                     <Link
                       href={`/collection/${colSlug}`}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="font-bold text-sm text-gray-900 uppercase tracking-wider"
+                      className="font-bold text-sm text-gray-900 uppercase tracking-wider hover:text-amber-800 transition-colors"
                     >
                       {item.name}
                     </Link>
                     {hasCategories && (
                       <button
                         onClick={() => setExpandedMobileItem(isExpanded ? null : item.id)}
-                        className="p-1 text-gray-500"
+                        className="p-1 text-gray-500 hover:text-black cursor-pointer"
                       >
                         <ChevronDown
-                          className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                          className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
                         />
                       </button>
                     )}
                   </div>
 
                   {hasCategories && isExpanded && (
-                    <div className="pl-3 pt-2 space-y-3 border-l-2 border-gray-200 ml-1">
+                    <div className="pl-3 pt-3 space-y-3 border-l-2 border-gray-200 ml-1 mt-2">
                       {item.categories.map((cat) => {
                         const catSlug = makeSlug(cat.slug || cat.name);
                         return (
@@ -505,26 +487,54 @@ export default function NavigationHeader() {
               );
             })}
 
-            {/* Static Mobile Links */}
-            <div className="pt-2 space-y-2 border-t border-gray-100">
+            {/* Custom Jewelry */}
+            <div className="py-3.5">
               <Link
                 href="/custom-jewelry"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block font-bold text-sm text-gray-900 uppercase tracking-wider py-1"
+                className="block font-bold text-sm text-gray-900 uppercase tracking-wider hover:text-amber-800 transition-colors"
               >
                 CUSTOM JEWELRY
               </Link>
+            </div>
+
+            {/* About Us */}
+            <div className="py-3.5">
               <Link
                 href="/about-us"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block font-bold text-sm text-gray-900 uppercase tracking-wider py-1"
+                className="block font-bold text-sm text-gray-900 uppercase tracking-wider hover:text-amber-800 transition-colors"
               >
                 ABOUT US
+              </Link>
+            </div>
+
+            {/* Contact Us */}
+            <div className="py-3.5">
+              <Link
+                href="/contact"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 font-bold text-sm text-gray-900 uppercase tracking-wider hover:text-amber-800 transition-colors"
+              >
+                <Gem className="w-4 h-4 text-gray-800" />
+                <span>CONTACT US</span>
+              </Link>
+            </div>
+
+            {/* Book Appointment */}
+            <div className="py-3.5">
+              <Link
+                href="/appointment"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 font-bold text-sm text-gray-900 uppercase tracking-wider hover:text-amber-800 transition-colors"
+              >
+                <CalendarCheck className="w-4 h-4 text-gray-800" />
+                <span>BOOK APPOINTMENT</span>
               </Link>
             </div>
           </div>
         </div>
       )}
-    </nav>
+    </>
   );
 }

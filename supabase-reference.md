@@ -571,3 +571,125 @@ BEGIN
 END;
 $$;
 ```
+
+### Supabase RPC Function: `get_latest_products_by_collection`
+
+```sql
+CREATE OR REPLACE FUNCTION get_latest_products_by_collection(
+    p_collection_name TEXT DEFAULT NULL,
+    p_limit INT DEFAULT 8
+)
+RETURNS TABLE (
+    id UUID,
+    name TEXT,
+    slug TEXT,
+    sku TEXT,
+    description TEXT,
+    gender TEXT,
+    is_active BOOLEAN,
+    price NUMERIC(10, 2),
+    discount_percentage NUMERIC(5, 2),
+    stock INT,
+    collection_id UUID,
+    collection_name TEXT,
+    collection_slug TEXT,
+    category_id UUID,
+    category_name TEXT,
+    category_slug TEXT,
+    sub_category_id UUID,
+    sub_category_name TEXT,
+    sub_category_slug TEXT,
+    image TEXT,
+    colors JSONB,
+    color_image_map JSONB,
+    created_at TIMESTAMPTZ
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_collection_id UUID := NULL;
+BEGIN
+    -- Resolve collection_id if p_collection_name is supplied and not 'all'
+    IF p_collection_name IS NOT NULL AND LOWER(TRIM(p_collection_name)) != 'all' AND TRIM(p_collection_name) != '' THEN
+        SELECT c.id INTO v_collection_id
+        FROM collections c
+        WHERE LOWER(c.name) = LOWER(TRIM(p_collection_name))
+           OR LOWER(c.slug) = LOWER(TRIM(p_collection_name))
+           OR c.id::TEXT = TRIM(p_collection_name)
+        LIMIT 1;
+    END IF;
+
+    RETURN QUERY
+    WITH prod_list AS (
+        SELECT p.*
+        FROM products p
+        WHERE p.is_active = TRUE
+          AND (
+            v_collection_id IS NULL 
+            OR p.collection_id = v_collection_id
+            OR (p_collection_name IS NOT NULL AND LOWER(TRIM(p_collection_name)) != 'all' AND (
+                EXISTS (
+                    SELECT 1 FROM collections c 
+                    WHERE c.id = p.collection_id 
+                    AND (LOWER(c.name) LIKE '%' || LOWER(TRIM(p_collection_name)) || '%' OR LOWER(c.slug) LIKE '%' || LOWER(TRIM(p_collection_name)) || '%')
+                )
+            ))
+          )
+        ORDER BY p.created_at DESC
+        LIMIT COALESCE(p_limit, 8)
+    )
+    SELECT 
+        p.id,
+        p.name,
+        p.slug,
+        p.sku,
+        p.description,
+        p.gender,
+        p.is_active,
+        p.price,
+        p.discount_percentage,
+        p.stock,
+        p.collection_id,
+        col.name AS collection_name,
+        col.slug AS collection_slug,
+        p.category_id,
+        cat.name AS category_name,
+        cat.slug AS category_slug,
+        p.sub_category_id,
+        sub.name AS sub_category_name,
+        sub.slug AS sub_category_slug,
+        COALESCE(
+            (SELECT mm.thumbnail FROM media_mapping mm WHERE mm.product_id = p.id AND mm.thumbnail IS NOT NULL AND mm.thumbnail != '' LIMIT 1),
+            ''
+        ) AS image,
+        COALESCE(
+            (
+                SELECT jsonb_agg(jsonb_build_object('id', cl.id, 'name', cl.name, 'slug', cl.slug, 'hex_code', cl.hex_code))
+                FROM (
+                    SELECT DISTINCT ON (c.id) c.id, c.name, c.slug, c.hex_code
+                    FROM media_mapping mm
+                    JOIN colors c ON c.id = mm.color_id
+                    WHERE mm.product_id = p.id
+                ) cl
+            ),
+            '[]'::jsonb
+        ) AS colors,
+        COALESCE(
+            (
+                SELECT jsonb_object_agg(mm.color_id::text, mm.thumbnail)
+                FROM media_mapping mm
+                WHERE mm.product_id = p.id AND mm.thumbnail IS NOT NULL AND mm.thumbnail != ''
+            ),
+            '{}'::jsonb
+        ) AS color_image_map,
+        p.created_at
+    FROM prod_list p
+    LEFT JOIN collections col ON col.id = p.collection_id
+    LEFT JOIN categories cat ON cat.id = p.category_id
+    LEFT JOIN sub_categories sub ON sub.id = p.sub_category_id
+    ORDER BY p.created_at DESC;
+END;
+$$;
+```
+

@@ -2,6 +2,7 @@ import { Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/ui/header";
 import Footer from "@/components/ui/footer";
+import { CartProvider } from "@/context/CartContext";
 
 const robotoMono = Roboto_Mono({
   variable: "--font-roboto-mono",
@@ -20,9 +21,11 @@ export default function RootLayout({ children }) {
       className={`${robotoMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white text-black font-sans">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <CartProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );

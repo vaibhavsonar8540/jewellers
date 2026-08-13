@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/productCard";
 import { fetchLatestProductsByCollectionService } from "@/lib/productService";
 
@@ -9,12 +10,13 @@ export default function LatestArrivalsSection({
   collectionName = "all",
   title = "",
   subtitle = "Discover our newest handcrafted arrivals.",
-  limit = 8,
+  limit = 10,
   className = "",
 }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [collectionInfo, setCollectionInfo] = useState(null);
+  const sliderRef = useRef(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -42,6 +44,17 @@ export default function LatestArrivalsSection({
     };
   }, [collectionName, limit]);
 
+  const scroll = (direction) => {
+    if (sliderRef.current) {
+      const { scrollLeft, clientWidth } = sliderRef.current;
+      const scrollAmount = clientWidth * 0.8;
+      sliderRef.current.scrollTo({
+        left: direction === "left" ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
   // Compute dynamic section title
   const displayTitle =
     title ||
@@ -59,37 +72,61 @@ export default function LatestArrivalsSection({
       : "/shop";
 
   return (
-    <section className={`py-12 sm:py-16 px-4 sm:px-8 lg:px-16 max-w-7xl mx-auto ${className}`}>
+    <section className={`pb-12 sm:pb-20 px-4 sm:px-8 lg:px-20 mx-auto ${className}`}>
       
-      {/* Header Row */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-12 border-b border-gray-100 pb-4 gap-4">
-        <div>
-          <h2 className="text-2xl sm:text-4xl font-canela text-gray-900 font-normal leading-tight">
+      {/* Header Row with Title & Slider Controls */}
+      <div className="flex flex-wrap items-end justify-between mb-6 sm:mb-10 border-b border-gray-100 pb-4 gap-y-3 gap-x-4">
+        <div className="max-w-xl">
+          <h2 className="text-xl sm:text-3xl lg:text-4xl font-canela text-gray-900 font-normal leading-tight">
             {displayTitle}
           </h2>
           {subtitle && (
-            <p className="text-xs sm:text-sm text-gray-500 mt-1.5 font-sans">
+            <p className="text-xs sm:text-sm text-gray-500 mt-1 font-sans">
               {subtitle}
             </p>
           )}
         </div>
 
-        <Link
-          href={shopUrl}
-          className="text-xs font-semibold tracking-wider text-amber-900 hover:text-black uppercase transition-colors inline-flex items-center gap-1 self-start sm:self-auto"
-        >
-          <span>View All</span>
-          <span className="text-sm">&rarr;</span>
-        </Link>
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+          {/* Navigation Arrows */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => scroll("left")}
+              aria-label="Previous products"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-gray-300 bg-white hover:bg-gray-900 hover:text-white hover:border-gray-900 flex items-center justify-center text-gray-700 transition-all duration-200 cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scroll("right")}
+              aria-label="Next products"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-gray-300 bg-white hover:bg-gray-900 hover:text-white hover:border-gray-900 flex items-center justify-center text-gray-700 transition-all duration-200 cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          </div>
+
+          <div className="h-4 w-px bg-gray-200" />
+
+          <Link
+            href={shopUrl}
+            className="text-xs font-bold tracking-widest text-[#202A4E] hover:text-amber-800 uppercase transition-colors inline-flex items-center gap-1"
+          >
+            <span>View All</span>
+            <span className="text-sm">&rarr;</span>
+          </Link>
+        </div>
       </div>
 
       {/* Loading Skeleton State */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {Array.from({ length: limit > 4 ? 4 : limit }).map((_, idx) => (
+        <div className="flex gap-4 sm:gap-6 overflow-hidden">
+          {Array.from({ length: 4 }).map((_, idx) => (
             <div
               key={idx}
-              className="bg-gray-100 animate-pulse rounded-xl h-72 w-full flex flex-col justify-between p-4"
+              className="bg-gray-100 animate-pulse rounded-xl h-72 w-[240px] sm:w-[280px] shrink-0 flex flex-col justify-between p-4"
             >
               <div className="bg-gray-200 rounded-lg h-40 w-full mb-3" />
               <div className="bg-gray-200 h-4 rounded w-3/4 mb-2" />
@@ -98,10 +135,19 @@ export default function LatestArrivalsSection({
           ))}
         </div>
       ) : products.length > 0 ? (
-        /* Product Cards Grid */
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+        /* Horizontal Product Slider */
+        <div
+          ref={sliderRef}
+          className="flex gap-4 sm:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 pt-1 scrollbar-none"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <div
+              key={product.id}
+              className="snap-start shrink-0 w-[68vw] xss:w-[240px] sm:w-[280px] lg:w-[300px]"
+            >
+              <ProductCard product={product} />
+            </div>
           ))}
         </div>
       ) : (

@@ -4,19 +4,20 @@ import React, { useState, useEffect, useRef } from "react";
 import CustomImg from "@/components/CustomImg";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Gem, CalendarCheck, Search, User, ShoppingBag, X, Loader2, Package, ChevronDown, LogOut } from "lucide-react";
+import { Gem, CalendarCheck, Search, User, ShoppingBag, X, Loader2, Package, ChevronDown, LogOut, Menu } from "lucide-react";
 
 import NavigationHeader from "@/components/ui/navigationHeader";
 import AuthModal from "@/components/ui/AuthModal";
 import CartDrawer from "@/components/ui/CartDrawer";
 import { fetchActiveProductsService } from "@/lib/productService";
 import { supabase } from "@/lib/db";
+import { useCart } from "@/context/CartContext";
 
 const Header = () => {
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const { openCart, totalItemCount } = useCart();
   const [user, setUser] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -108,6 +109,8 @@ const Header = () => {
     setSearchOpen(false);
   };
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <header className="w-full font-sans sticky top-0 z-50 shadow-xs bg-white">
       {/* 2. Main Navigation Header */}
@@ -116,21 +119,36 @@ const Header = () => {
           
           {/* Left Actions */}
           <div className="flex items-center gap-5 sm:gap-7 text-gray-800 z-20">
-            <Link
-              href="/contact"
-              className="flex items-center gap-2 text-xs sm:text-sm font-semibold tracking-wider hover:text-primary transition-colors uppercase"
-            >
-              <Gem className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-gray-800" />
-              <span className="hidden sm:inline">CONTACT US</span>
-            </Link>
+            {/* Desktop View: Contact & Appointment Links (sm screens and above) */}
+            <div className="hidden sm:flex items-center gap-5 sm:gap-7">
+              <Link
+                href="/contact"
+                className="flex items-center gap-2 text-xs sm:text-sm font-semibold tracking-wider hover:text-primary transition-colors uppercase"
+              >
+                <Gem className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-gray-800" />
+                <span>CONTACT US</span>
+              </Link>
 
-            <Link
-              href="/appointment"
-              className="flex items-center gap-2 text-xs sm:text-sm font-semibold tracking-wider hover:text-primary transition-colors uppercase"
-            >
-              <CalendarCheck className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-gray-800" />
-              <span className="hidden sm:inline">BOOK APPOINTMENT</span>
-            </Link>
+              <Link
+                href="/appointment"
+                className="flex items-center gap-2 text-xs sm:text-sm font-semibold tracking-wider hover:text-primary transition-colors uppercase"
+              >
+                <CalendarCheck className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-gray-800" />
+                <span>BOOK APPOINTMENT</span>
+              </Link>
+            </div>
+
+            {/* Mobile View: Jewelry Menu Icon Button (< sm screens) */}
+            <div className="sm:hidden flex items-center">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="flex items-center gap-2 text-gray-900 p-1 hover:text-primary transition-colors cursor-pointer"
+                aria-label="Toggle Jewelry Menu"
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6 stroke-[1.8]" /> : <Menu className="w-6 h-6 stroke-[1.8]" />}
+              </button>
+            </div>
           </div>
 
           {/* Center Brand Logo - Absolutely Centered */}
@@ -198,10 +216,15 @@ const Header = () => {
 
             <button
               aria-label="Cart"
-              onClick={() => setCartDrawerOpen(true)}
+              onClick={openCart}
               className="p-1 hover:text-primary transition-colors relative cursor-pointer"
             >
               <ShoppingBag className="w-5 h-5 sm:w-5.5 sm:h-5.5 stroke-[1.8]" />
+              {totalItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#202A4E] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {totalItemCount}
+                </span>
+              )}
             </button>
 
             {user ? (
@@ -334,7 +357,7 @@ const Header = () => {
       </div>
 
       {/* 3. Sub Navigation Bar (Collections -> Categories -> Subcategories Mega Menu) */}
-      <NavigationHeader />
+      <NavigationHeader mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
 
       {/* 4. User Authentication Modal */}
       <AuthModal
@@ -343,10 +366,7 @@ const Header = () => {
       />
 
       {/* 5. Shopping Cart Drawer */}
-      <CartDrawer
-        isOpen={cartDrawerOpen}
-        onClose={() => setCartDrawerOpen(false)}
-      />
+      <CartDrawer />
     </header>
   );
 };
