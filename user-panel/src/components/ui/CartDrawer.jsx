@@ -52,11 +52,6 @@ export default function CartDrawer() {
             <h3 className="text-xl sm:text-2xl font-canela font-normal text-gray-900 tracking-tight">
               Your Bag ({totalItemCount})
             </h3>
-            {user?.email && (
-              <p className="text-[11px] text-gray-500 font-mono">
-                User: {user.email}
-              </p>
-            )}
           </div>
           <button
             onClick={closeCart}
@@ -232,27 +227,27 @@ export default function CartDrawer() {
               />
               <span>
                 I have read and agree to the{" "}
-                <span className="underline hover:text-black">Terms and Conditions</span>,{" "}
-                <span className="underline hover:text-black">Shipping Policy</span>,{" "}
-                <span className="underline hover:text-black">Privacy Policy</span>, and{" "}
-                <span className="underline hover:text-black">Return Policy</span>.
+                <Link href="/terms-and-conditions" onClick={closeCart} className="underline hover:text-black">Terms and Conditions</Link>,{" "}
+                <Link href="/returns-shipping" onClick={closeCart} className="underline hover:text-black">Shipping Policy</Link>,{" "}
+                <Link href="/privacy-policy" onClick={closeCart} className="underline hover:text-black">Privacy Policy</Link>, and{" "}
+                <Link href="/returns-shipping" onClick={closeCart} className="underline hover:text-black">Return Policy</Link>.
               </span>
             </label>
 
             {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => alert("Proceeding to checkout...")}
-                className="w-full border border-[#202A4E] text-[#202A4E] hover:bg-[#202A4E] hover:text-white py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer rounded-none text-center"
+              <Link
+                href={user ? "/checkout" : "/login?redirect=/checkout"}
+                onClick={closeCart}
+                className="w-full border border-[#202A4E] text-[#202A4E] hover:bg-[#202A4E] hover:text-white py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer rounded-none text-center flex items-center justify-center"
               >
                 CHECKOUT
-              </button>
+              </Link>
 
               <Link
                 href="/cart"
                 onClick={closeCart}
-                className="w-full bg-[#202A4E] hover:bg-black text-white py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer rounded-none text-center block"
+                className="w-full bg-[#202A4E] hover:bg-black text-white py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer rounded-none text-center flex items-center justify-center"
               >
                 VIEW YOUR BAG
               </Link>

@@ -98,7 +98,7 @@ export default function CartPage() {
 
       {/* Main Container */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-10 lg:px-16 pt-2">
-        {/* Title Header with User Status */}
+        {/* Title Header */}
         <div className="text-center py-6 relative flex flex-col items-center justify-center space-y-2">
           <div className="flex items-center gap-3">
             <ShoppingBag className="w-7 h-7 sm:w-8 sm:h-8 text-gray-900 stroke-[1.4]" />
@@ -106,23 +106,6 @@ export default function CartPage() {
               My Bag ({totalItemCount})
             </h1>
           </div>
-
-          {/* User Auth Status Badge */}
-          {user ? (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700 font-mono">
-              <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>
-                Logged in as: <strong className="text-gray-900 font-semibold">{user.email}</strong>
-              </span>
-            </div>
-          ) : (
-            <div className="text-xs text-gray-500 font-sans">
-              Guest Bag —{" "}
-              <Link href="/login?redirect=/checkout" className="underline hover:text-black font-medium">
-                Login to sync your saved items across devices
-              </Link>
-            </div>
-          )}
 
           <div className="w-48 h-px bg-gray-200 mt-2" />
         </div>

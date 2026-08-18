@@ -51,21 +51,22 @@ const aboutUsContent = {
 
 export default function AboutUsPage() {
   return (
-    <div>
+    <div className="min-h-screen bg-white text-gray-900 overflow-x-hidden font-sans">
+      {/* Hero Banner */}
       <HeroBanner
         src={aboutUs}
         mobileSrc={aboutUsMobile}
         title="About Us"
         desc="Discover our rich heritage, master craftsmanship, and unwavering commitment to timeless luxury jewelry."
-        contentClass="absolute inset-0 flex flex-col justify-center items-start text-left p-8 md:p-12 lg:p-16 text-black space-y-3"
-        titleClass="font-serif text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-black"
-        descClass="text-sm md:text-base lg:text-lg font-medium max-w-xl text-black/80"
+        contentClass="absolute inset-0 flex flex-col justify-end items-center text-center p-4 sm:p-8 md:p-12 lg:p-16 text-black space-y-2 sm:space-y-3 pb-6 sm:pb-10 md:pb-14 lg:pb-16"
+        titleClass="font-serif text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-black text-center"
+        descClass="text-xs sm:text-base lg:text-lg font-medium max-w-2xl text-black/80 text-center px-2"
       />
 
-      <section className="container mx-auto px-4 sm:px-6 lg:px-16 py-10 lg:py-16 2xl:py-20">
-        {/* Text Content */}
-        <div className="flex flex-col gap-2">
-          <p className="text-gray-700 text-base 2xl:text-lg leading-relaxed">
+      {/* Intro Text Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-12 lg:py-16 2xl:py-20">
+        <div className="flex flex-col gap-3 sm:gap-4 max-w-5xl mx-auto text-left">
+          <p className="text-gray-700 text-sm sm:text-base md:text-lg 2xl:text-xl leading-relaxed">
             Welcome to <strong>Luxora</strong>—a world where timeless elegance
             meets modern values. Born from a desire to offer beauty without
             compromise, Luxora is committed to crafting high-end jewelry that
@@ -73,14 +74,14 @@ export default function AboutUsPage() {
             personal, responsible, and lasting.
           </p>
 
-          <p className="text-gray-600 text-base 2xl:text-lg leading-relaxed">
+          <p className="text-gray-600 text-sm sm:text-base md:text-lg 2xl:text-xl leading-relaxed">
             Our pieces are designed using premium lab-grown diamonds, offering
             brilliance and sparkle without an ethical or environmental toll.
             Each creation is brought to life by skilled artisans who ensure
             every detail is perfection.
           </p>
 
-          <p className="text-gray-600 text-base 2xl:text-lg leading-relaxed">
+          <p className="text-gray-600 text-sm sm:text-base md:text-lg 2xl:text-xl leading-relaxed">
             At Luxora, jewelry is part of your story. Whether celebrating a
             milestone or treating yourself, every piece feels as meaningful as
             it looks—luxury that is beautiful inside and out.
@@ -88,16 +89,20 @@ export default function AboutUsPage() {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 sm:px-6 lg:px-10 pb-16 space-y-12 lg:space-y-20">
+      {/* Zigzag Features Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 pb-12 sm:pb-16 lg:pb-20 space-y-12 lg:space-y-20">
         {Object.values(aboutUsContent).map((section, index) => (
           <Zigzag key={index} {...section} />
         ))}
       </section>
 
-      <AboutCollectionAccordion
-        img1={aboutUsZigCollection1}
-        img2={aboutUsZigCollection2}
-      />
+      {/* Accordion Collection Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 pb-16">
+        <AboutCollectionAccordion
+          img1={aboutUsZigCollection1}
+          img2={aboutUsZigCollection2}
+        />
+      </section>
     </div>
   );
 }

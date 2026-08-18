@@ -219,6 +219,9 @@ const Footer = () => {
             <Link href="/sitemap" className="hover:text-white transition-colors">
               Site Map
             </Link>
+            <Link href="/returns-shipping" className="hover:text-white transition-colors">
+              Returns & Shipping
+            </Link>
           </div>
         </div>
 
