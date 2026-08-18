@@ -14,146 +14,6 @@ import {
   CalendarCheck,
 } from "lucide-react";
 
-// Default Fallback Hierarchy matching the uploaded design
-const DEFAULT_HIERARCHY = [
-  {
-    id: "jewelry",
-    name: "JEWELRY",
-    slug: "jewelry",
-    image_url: "https://images.unsplash.com/photo-1630019852942-f89202989a59?w=800&auto=format&fit=crop&q=80",
-    featured_caption: "Discover dazzling diamond deals, expertly crafted and perfectly priced for every occasion.",
-    featured_link_text: "Deals of the Week",
-    categories: [
-      {
-        id: "cat-rings",
-        name: "Rings",
-        slug: "rings",
-        sub_categories: [
-          { id: "sub-1", name: "Anniversary Rings", slug: "anniversary-rings" },
-          { id: "sub-2", name: "High Jewelry", slug: "high-jewelry" },
-          { id: "sub-3", name: "Fashion Rings", slug: "fashion-rings" },
-        ],
-      },
-      {
-        id: "cat-earrings",
-        name: "Earrings",
-        slug: "earrings",
-        sub_categories: [
-          { id: "sub-4", name: "Hoops", slug: "hoops" },
-          { id: "sub-5", name: "Studs", slug: "studs" },
-          { id: "sub-6", name: "Fashion", slug: "fashion-earrings" },
-        ],
-      },
-      {
-        id: "cat-necklaces",
-        name: "Necklaces",
-        slug: "necklaces",
-        sub_categories: [
-          { id: "sub-7", name: "Necklace", slug: "necklace" },
-          { id: "sub-8", name: "Pendants", slug: "pendants" },
-          { id: "sub-9", name: "Fashion", slug: "fashion-necklaces" },
-        ],
-      },
-      {
-        id: "cat-bracelets",
-        name: "Bracelets",
-        slug: "bracelets",
-        sub_categories: [
-          { id: "sub-10", name: "Tennis", slug: "tennis-bracelets" },
-          { id: "sub-11", name: "Fashion", slug: "fashion-bracelets" },
-        ],
-      },
-      {
-        id: "cat-mens",
-        name: "Men's Jewelry",
-        slug: "mens-jewelry",
-        sub_categories: [
-          { id: "sub-12", name: "Rings", slug: "mens-rings" },
-          { id: "sub-13", name: "Bracelets", slug: "mens-bracelets" },
-          { id: "sub-14", name: "Pendants", slug: "mens-pendants" },
-          { id: "sub-15", name: "Chain", slug: "mens-chains" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "engagement",
-    name: "ENGAGEMENT",
-    slug: "engagement",
-    image_url: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&auto=format&fit=crop&q=80",
-    featured_caption: "Timeless engagement rings handcrafted with certified GIA solitaire diamonds.",
-    featured_link_text: "Bridal Specials",
-    categories: [
-      {
-        id: "cat-solitaire",
-        name: "Solitaire Rings",
-        slug: "solitaire-rings",
-        sub_categories: [
-          { id: "sub-20", name: "Round Cut", slug: "round-cut" },
-          { id: "sub-21", name: "Oval Cut", slug: "oval-cut" },
-          { id: "sub-22", name: "Princess Cut", slug: "princess-cut" },
-        ],
-      },
-      {
-        id: "cat-halo",
-        name: "Halo Rings",
-        slug: "halo-rings",
-        sub_categories: [
-          { id: "sub-23", name: "Single Halo", slug: "single-halo" },
-          { id: "sub-24", name: "Double Halo", slug: "double-halo" },
-          { id: "sub-25", name: "Hidden Halo", slug: "hidden-halo" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "wedding",
-    name: "WEDDING",
-    slug: "wedding",
-    image_url: "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=800&auto=format&fit=crop&q=80",
-    featured_caption: "Matching wedding bands and diamond eternity rings for modern couples.",
-    featured_link_text: "Explore Wedding Bands",
-    categories: [
-      {
-        id: "cat-women-wedding",
-        name: "Women's Bands",
-        slug: "womens-wedding-bands",
-        sub_categories: [
-          { id: "sub-30", name: "Eternity Bands", slug: "eternity-bands" },
-          { id: "sub-31", name: "Contour Bands", slug: "contour-bands" },
-        ],
-      },
-      {
-        id: "cat-men-wedding",
-        name: "Men's Bands",
-        slug: "mens-wedding-bands",
-        sub_categories: [
-          { id: "sub-32", name: "Gold Bands", slug: "gold-bands" },
-          { id: "sub-33", name: "Platinum Bands", slug: "platinum-bands" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "flash-deals",
-    name: "FLASH DEALS",
-    slug: "flash-deals",
-    image_url: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800&auto=format&fit=crop&q=80",
-    featured_caption: "Limited-time offers on fine diamond necklaces and solitaire pendants.",
-    featured_link_text: "Shop Flash Deals",
-    categories: [],
-  },
-  {
-    id: "custom",
-    name: "CUSTOM",
-    slug: "custom",
-    image_url: "https://images.unsplash.com/photo-1611591475140-7e3e9d7c3127?w=800&auto=format&fit=crop&q=80",
-    featured_caption: "Bespoke jewelry creation tailored to your exact style and specifications.",
-    featured_link_text: "Book Custom Design",
-    categories: [],
-  },
-];
-
 const makeSlug = (str) =>
   (str || "")
     .toLowerCase()
@@ -233,33 +93,23 @@ export default function NavigationHeader({
               };
             });
 
-            // Find matching default template if available to provide featured caption/link
-            const matchDefault = DEFAULT_HIERARCHY.find(
-              (d) => d.name.toLowerCase() === col.name.toLowerCase() || d.slug === col.slug
-            );
-
             return {
               ...col,
               name: col.name.toUpperCase(),
-              image_url: col.image_url || matchDefault?.image_url || DEFAULT_HIERARCHY[0].image_url,
-              featured_caption: matchDefault?.featured_caption || `Discover exquisite ${col.name} designs, expertly crafted for every occasion.`,
-              featured_link_text: matchDefault?.featured_link_text || `Shop ${col.name}`,
+              image_url: col.image_url || "https://images.unsplash.com/photo-1630019852942-f89202989a59?w=800&auto=format&fit=crop&q=80",
+              featured_caption: `Discover exquisite ${col.name} designs, expertly crafted for every occasion.`,
+              featured_link_text: `Shop ${col.name}`,
               categories: categoriesWithSubs,
             };
           });
 
-          // Merge default hierarchy items if DB has fewer than 3 items
-          if (tree.length < 3) {
-            setNavTree([...tree, ...DEFAULT_HIERARCHY.slice(tree.length)]);
-          } else {
-            setNavTree(tree);
-          }
+          setNavTree(tree);
         } else {
-          setNavTree(DEFAULT_HIERARCHY);
+          setNavTree([]);
         }
       } catch (err) {
         console.error("Error building navigation tree:", err);
-        setNavTree(DEFAULT_HIERARCHY);
+        setNavTree([]);
       } finally {
         setLoading(false);
       }

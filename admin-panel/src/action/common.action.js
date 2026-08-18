@@ -11,14 +11,16 @@ import {
   createColorService,
   getRingSizesService,
   createRingSizeService,
-  getPuritiesService,
-  createPurityService,
+  getKaratsService,
+  createKaratService,
+  getColorKaratsService,
+  createColorKaratService,
+  deleteColorKaratService,
   getProductsService,
   createProductService,
   toggleProductActiveService,
   updateProductService,
   deleteProductService,
-  removeProductMediaService,
 } from "@/service/common.service";
 
 export const createCollection = async (payload) => {
@@ -141,82 +143,64 @@ export const createRingSizeAction = async (payload) => {
   }
 };
 
-export const fetchPuritiesAction = async () => {
+export const fetchKaratsAction = async () => {
   try {
-    const res = await getPuritiesService();
+    const res = await getKaratsService();
     return res;
   } catch (error) {
-    console.error("Action fetchPuritiesAction Error:", error);
-    return { data: null, error: { message: error.message || "Failed to fetch purities." } };
+    console.error("Action fetchKaratsAction Error:", error);
+    return { data: null, error: { message: error.message || "Failed to fetch karat purities." } };
   }
 };
 
-export const createPurityAction = async (payload) => {
+export const fetchPuritiesAction = fetchKaratsAction;
+
+export const createKaratAction = async (payload) => {
   try {
-    const res = await createPurityService(payload);
+    const res = await createKaratService(payload);
     return res;
   } catch (error) {
-    console.error("Action createPurityAction Error:", error);
+    console.error("Action createKaratAction Error:", error);
     return { data: null, error: { message: error.message || "An unexpected error occurred." } };
   }
 };
 
-export const fetchProductsAction = async () => {
+export const createPurityAction = createKaratAction;
+
+export const fetchColorKaratsAction = async (colorId = null) => {
   try {
-    const res = await getProductsService();
+    const res = await getColorKaratsService(colorId);
     return res;
   } catch (error) {
-    console.error("Action fetchProductsAction Error:", error);
-    return { data: [], error: { message: error.message || "Failed to fetch products." } };
+    console.error("Action fetchColorKaratsAction Error:", error);
+    return { data: [], error: { message: error.message || "Failed to fetch color karats." } };
   }
 };
 
-export const createProductAction = async (payload) => {
+export const createColorKaratAction = async (payload) => {
   try {
-    const res = await createProductService(payload);
+    const res = await createColorKaratService(payload);
     return res;
   } catch (error) {
-    console.error("Action createProductAction Error:", error);
+    console.error("Action createColorKaratAction Error:", error);
     return { data: null, error: { message: error.message || "An unexpected error occurred." } };
   }
 };
 
-export const toggleProductActiveAction = async (productId, isActive) => {
+export const deleteColorKaratAction = async (payload) => {
   try {
-    const res = await toggleProductActiveService(productId, isActive);
+    const res = await deleteColorKaratService(payload);
     return res;
   } catch (error) {
-    console.error("Action toggleProductActiveAction Error:", error);
-    return { data: null, error: { message: error.message || "Failed to update status." } };
+    console.error("Action deleteColorKaratAction Error:", error);
+    return { data: null, error: { message: error.message || "An unexpected error occurred." } };
   }
 };
 
-export const updateProductAction = async (payload) => {
-  try {
-    const res = await updateProductService(payload);
-    return res;
-  } catch (error) {
-    console.error("Action updateProductAction Error:", error);
-    return { data: null, error: { message: error.message || "An unexpected error occurred during product update." } };
-  }
-};
-
-export const deleteProductAction = async (productId) => {
-  try {
-    const res = await deleteProductService(productId);
-    return res;
-  } catch (error) {
-    console.error("Action deleteProductAction Error:", error);
-    return { data: null, error: { message: error.message || "Failed to delete product." } };
-  }
-};
-
-export const removeProductMediaAction = async (productId, colorId = null) => {
-  try {
-    const res = await removeProductMediaService(productId, colorId);
-    return res;
-  } catch (error) {
-    console.error("Action removeProductMediaAction Error:", error);
-    return { data: null, error: { message: error.message || "Failed to remove product media." } };
-  }
-};
+export {
+  fetchProductsAction,
+  createProductAction,
+  updateProductAction,
+  deleteProductAction,
+  toggleProductActiveAction,
+} from "./product.action";

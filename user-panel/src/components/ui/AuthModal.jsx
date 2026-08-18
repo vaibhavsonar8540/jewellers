@@ -2,14 +2,27 @@
 
 import React, { useState, useEffect } from "react";
 import { X, Mail, Lock, Phone, User, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-import { supabase } from "@/lib/db";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  loginUser,
+  registerUser,
+  clearAuthError,
+  clearAuthSuccess,
+  selectAuthLoading,
+  selectAuthError,
+  selectAuthSuccess,
+} from "@/store/slice/authSlice";
+import { authService } from "@/services/authService";
 
 export default function AuthModal({ isOpen, onClose, initialTab = "login" }) {
+  const dispatch = useDispatch();
+  const loading = useSelector(selectAuthLoading);
+  const errorMsg = useSelector(selectAuthError);
+  const successMsg = useSelector(selectAuthSuccess);
+
   const [activeTab, setActiveTab] = useState(initialTab);
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
+  const [resetMsg, setResetMsg] = useState("");
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -38,54 +51,41 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }) {
 
   if (!isOpen) return null;
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    dispatch(clearAuthError());
+    dispatch(clearAuthSuccess());
+    setResetMsg("");
+  };
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg("");
-    setSuccessMsg("");
+    dispatch(clearAuthError());
+    dispatch(clearAuthSuccess());
+    setResetMsg("");
 
     const cleanEmail = loginData.email.trim().toLowerCase();
     const cleanPassword = loginData.password;
 
     if (!cleanEmail || !cleanPassword) {
-      setErrorMsg("Please enter both email address and password.");
       return;
     }
 
-    setLoading(true);
-    try {
-      if (supabase) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password: cleanPassword,
-        });
+    const action = await dispatch(loginUser({ email: cleanEmail, password: cleanPassword }));
 
-        if (error) {
-          console.error("Supabase Login Error:", error);
-          setErrorMsg(error.message || "Invalid login credentials. Please check your email and password.");
-        } else {
-          setSuccessMsg("Welcome back! Login successful.");
-          setTimeout(() => {
-            onClose();
-          }, 1200);
-        }
-      } else {
-        setSuccessMsg("Welcome back! Login successful.");
-        setTimeout(() => {
-          onClose();
-        }, 1200);
-      }
-    } catch (err) {
-      console.error("Login unexpected error:", err);
-      setErrorMsg("An unexpected error occurred. Please try again.");
-    } finally {
-      setLoading(false);
+    if (loginUser.fulfilled.match(action)) {
+      setTimeout(() => {
+        onClose();
+        dispatch(clearAuthSuccess());
+      }, 1200);
     }
   };
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg("");
-    setSuccessMsg("");
+    dispatch(clearAuthError());
+    dispatch(clearAuthSuccess());
+    setResetMsg("");
 
     const cleanName = registerData.name.trim();
     const cleanEmail = registerData.email.trim().toLowerCase();
@@ -93,78 +93,36 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }) {
     const cleanPassword = registerData.password;
 
     if (!cleanName || !cleanEmail || !cleanPassword) {
-      setErrorMsg("Please fill in all required fields.");
       return;
     }
 
-    if (cleanPassword.length < 6) {
-      setErrorMsg("Password must be at least 6 characters long.");
+    const action = await dispatch(
+      registerUser({
+        name: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone,
+        password: cleanPassword,
+      })
+    );
+
+    if (registerUser.fulfilled.match(action)) {
+      setTimeout(() => {
+        onClose();
+        dispatch(clearAuthSuccess());
+      }, 1200);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!loginData.email.trim()) {
+      setResetMsg("Please enter your email address above first.");
       return;
     }
-
-    setLoading(true);
     try {
-      if (supabase) {
-        // Sign up with Supabase Auth
-        const { data, error } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password: cleanPassword,
-          options: {
-            data: {
-              name: cleanName,
-              phone: cleanPhone,
-            },
-          },
-        });
-
-        if (error) {
-          console.error("Supabase SignUp Error:", error);
-          setErrorMsg(error.message || "Registration failed. Please try again.");
-        } else {
-          // Check if user already exists (identities is empty for existing emails in Supabase)
-          if (data?.user?.identities && data.user.identities.length === 0) {
-            setErrorMsg("An account with this email already exists.");
-            setLoading(false);
-            return;
-          }
-
-          // Insert or update record in profiles table
-          if (data?.user?.id) {
-            const { error: profileErr } = await supabase.from("profiles").upsert(
-              [
-                {
-                  id: data.user.id,
-                  name: cleanName,
-                  email: cleanEmail,
-                  role: "user",
-                },
-              ],
-              { onConflict: "id" }
-            );
-            if (profileErr) {
-              console.error("Profiles Table Error:", profileErr);
-            }
-          }
-
-          // Show success message and close modal automatically after 1.2s
-          setSuccessMsg("Account created successfully!");
-          setTimeout(() => {
-            onClose();
-            setSuccessMsg("");
-          }, 1200);
-        }
-      } else {
-        setSuccessMsg("Account created successfully!");
-        setTimeout(() => {
-          onClose();
-          setSuccessMsg("");
-        }, 1200);
-      }
+      await authService.resetPassword(loginData.email);
+      setResetMsg("Password reset link sent to your email address.");
     } catch (err) {
-      console.error("Register unexpected error:", err);
-      setErrorMsg("An error occurred during registration.");
-    } finally {
-      setLoading(false);
+      setResetMsg(err.message || "Failed to send reset email.");
     }
   };
 
@@ -195,11 +153,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }) {
         <div className="flex border-b border-gray-200 mb-6">
           <button
             type="button"
-            onClick={() => {
-              setActiveTab("login");
-              setErrorMsg("");
-              setSuccessMsg("");
-            }}
+            onClick={() => handleTabChange("login")}
             className={`flex-1 py-2.5 text-xs sm:text-sm font-semibold text-center transition-all cursor-pointer ${
               activeTab === "login"
                 ? "border-b-2 border-gray-900 text-gray-900 font-bold"
@@ -210,11 +164,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }) {
           </button>
           <button
             type="button"
-            onClick={() => {
-              setActiveTab("register");
-              setErrorMsg("");
-              setSuccessMsg("");
-            }}
+            onClick={() => handleTabChange("register")}
             className={`flex-1 py-2.5 text-xs sm:text-sm font-semibold text-center transition-all cursor-pointer ${
               activeTab === "register"
                 ? "border-b-2 border-gray-900 text-gray-900 font-bold"
@@ -272,13 +222,19 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }) {
               <div className="pt-1 flex justify-end">
                 <button
                   type="button"
-                  onClick={() => alert("Password reset link sent to your email address.")}
+                  onClick={handleForgotPassword}
                   className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
                 >
                   Forgot Password?
                 </button>
               </div>
             </div>
+
+            {resetMsg && (
+              <p className="text-[11px] font-semibold text-gray-600 italic mt-1">
+                {resetMsg}
+              </p>
+            )}
 
             {/* Submit Button */}
             <button
@@ -323,7 +279,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }) {
               <span>Personal Details</span>
             </div>
 
-            {/* Full Name Field (matching profiles table schema: name) */}
+            {/* Full Name Field */}
             <div className="space-y-1">
               <label className="text-[11px] font-semibold text-gray-600 block">
                 Full Name
@@ -376,7 +332,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = "login" }) {
               </div>
             </div>
 
-            {/* Single Password Field */}
+            {/* Password Field */}
             <div className="space-y-1">
               <label className="text-[11px] font-semibold text-gray-600 block">
                 Password

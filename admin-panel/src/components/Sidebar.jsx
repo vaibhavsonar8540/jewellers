@@ -9,24 +9,18 @@ import {
   MessageSquare,
   Layers,
   Ticket,
-  Gem,
-  Ruler,
-  Palette,
+  SlidersHorizontal,
   LogOut,
   Menu,
   X,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 
 export const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
   { id: "products", label: "Product", icon: Package },
   { id: "collections", label: "Collection", icon: Layers },
-  { id: "diamond", label: "Diamond Shapes", icon: Gem },
-  { id: "ring_size", label: "Ring Size", icon: Ruler },
-  { id: "carats", label: "Carat Purity", icon: Sparkles },
-  { id: "gold_color", label: "Gold Color", icon: Palette },
+  { id: "customize", label: "Customize", icon: SlidersHorizontal },
   { id: "coupon_codes", label: "Coupon Code", icon: Ticket },
   { id: "contact_requests", label: "Contact Requests", icon: MessageSquare },
 ];

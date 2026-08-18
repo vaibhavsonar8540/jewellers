@@ -248,6 +248,15 @@ const Header = () => {
                       <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
                     </div>
 
+                    <Link
+                      href="/orders"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 flex items-center gap-2 transition-colors cursor-pointer border-b border-gray-100"
+                    >
+                      <Package className="w-4 h-4 text-amber-700" />
+                      <span>My Orders</span>
+                    </Link>
+
                     <button
                       onClick={async () => {
                         setUserMenuOpen(false);

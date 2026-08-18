@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Sparkles, Plus, Search, PackageOpen, X, Loader2, AlertCircle, MoreVertical } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { setPurities } from "@/store/slice/commonSlice";
-import { fetchPuritiesAction, createPurityAction } from "@/action/common.action";
+import { setKarats } from "@/store/slice/commonSlice";
+import { fetchKaratsAction, createKaratAction } from "@/action/common.action";
 
 export default function CaratView() {
   const [openDialog, setOpenDialog] = useState(false);
@@ -16,25 +16,25 @@ export default function CaratView() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const dispatch = useDispatch();
-  const purities = useSelector((state) => state.common.purities) || [];
+  const karats = useSelector((state) => state.common.karats || state.common.purities) || [];
 
-  // Fetch Purities on mount
+  // Fetch Karats on mount
   useEffect(() => {
-    const loadPurities = async () => {
+    const loadKarats = async () => {
       setFetching(true);
       try {
-        const res = await fetchPuritiesAction();
+        const res = await fetchKaratsAction();
         if (res?.data) {
-          dispatch(setPurities(res.data));
+          dispatch(setKarats(res.data));
         }
       } catch (err) {
-        console.error("Error loading purities:", err);
+        console.error("Error loading karat purities:", err);
       } finally {
         setFetching(false);
       }
     };
 
-    loadPurities();
+    loadKarats();
   }, [dispatch]);
 
   const handleClose = () => {
@@ -61,7 +61,7 @@ export default function CaratView() {
         formattedCarat += "K";
       }
 
-      const res = await createPurityAction({
+      const res = await createKaratAction({
         carat: formattedCarat,
         price: price ? parseFloat(price) : 0.00,
       });
@@ -69,7 +69,7 @@ export default function CaratView() {
       if (res?.error) {
         setErrorMsg(res.error.message || "Failed to create carat purity.");
       } else if (res?.data) {
-        dispatch(setPurities([...purities, ...res.data]));
+        dispatch(setKarats([...karats, ...res.data]));
         handleClose();
       } else {
         setErrorMsg("Unexpected response while creating carat purity.");
@@ -82,7 +82,7 @@ export default function CaratView() {
     }
   };
 
-  const filtered = (purities || []).filter((p) => {
+  const filtered = (karats || []).filter((p) => {
     const caratVal = typeof p === "string" ? p : p?.carat || p?.name || "";
     return caratVal.toLowerCase().includes(searchTerm.toLowerCase());
   });

@@ -11,6 +11,10 @@ const createSlug = (text) => {
     .replace(/-+/g, "-");
 };
 
+const isUUID = (str) =>
+  typeof str === "string" &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+
 // ----------------------------------------------------
 // 1. COLLECTIONS SERVICE ('collections' table)
 // ----------------------------------------------------
@@ -36,53 +40,30 @@ export const getCollectionsService = async () => {
 export const collectionService = async ({ name, imageFile }) => {
   let imageUrl = null;
 
-  // 1. If an image file is provided, upload it to Supabase Storage bucket 'luxora' inside folder 'collection'
   if (imageFile) {
     const fileExt = imageFile.name.split(".").pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
     const filePath = `collection/${fileName}`;
 
-    const { data: uploadData, error: uploadError } = await supabase
-      .storage
+    const { error: uploadError } = await supabase.storage
       .from("luxora")
       .upload(filePath, imageFile, {
         cacheControl: "3600",
         upsert: true,
       });
 
-    if (uploadError) {
-      console.error("Supabase Storage Upload Error:", uploadError);
-      if (uploadError.message?.includes("row-level security") || uploadError.error?.includes("row-level security")) {
-        return {
-          data: null,
-          error: {
-            message: "Storage RLS Error: Supabase storage policy prevents uploading. Please apply the storage SQL policy in Supabase SQL Editor.",
-          },
-        };
-      }
-      return { data: null, error: uploadError };
+    if (!uploadError) {
+      const { data: publicUrlData } = supabase.storage
+        .from("luxora")
+        .getPublicUrl(filePath);
+      imageUrl = publicUrlData?.publicUrl || null;
     }
-
-    // Get public URL for the uploaded file
-    const { data: publicUrlData } = supabase
-      .storage
-      .from("luxora")
-      .getPublicUrl(filePath);
-
-    imageUrl = publicUrlData?.publicUrl || null;
   }
 
-  // 2. Insert new row into 'collections' table
   const slug = createSlug(name);
   const { data, error } = await supabase
     .from("collections")
-    .insert([
-      {
-        name,
-        slug,
-        image_url: imageUrl,
-      },
-    ])
+    .insert([{ name, slug, image_url: imageUrl }])
     .select();
 
   if (error) {
@@ -104,14 +85,10 @@ export const getCategoriesService = async () => {
       .order("created_at", { ascending: false });
 
     if (error) {
-      // Fallback plain select if join fails
       const { data: rawData, error: rawError } = await supabase
         .from("categories")
         .select("*");
-      if (rawError) {
-        console.error("getCategoriesService Error:", rawError);
-        return { data: [], error: rawError };
-      }
+      if (rawError) return { data: [], error: rawError };
       return { data: rawData, error: null };
     }
 
@@ -126,20 +103,14 @@ export const createCategoryService = async ({ name, collection_id }) => {
   try {
     const slug = createSlug(name);
     const payload = { name, slug };
-    if (collection_id) {
-      payload.collection_id = collection_id;
-    }
+    if (collection_id) payload.collection_id = collection_id;
 
     const { data, error } = await supabase
       .from("categories")
       .insert([payload])
       .select();
 
-    if (error) {
-      console.error("Supabase Categories Insert Error:", error);
-      return { data: null, error };
-    }
-
+    if (error) return { data: null, error };
     return { data, error: null };
   } catch (err) {
     console.error("createCategoryService Error:", err);
@@ -161,10 +132,7 @@ export const getSubCategoriesService = async () => {
       const { data: rawData, error: rawError } = await supabase
         .from("sub_categories")
         .select("*");
-      if (rawError) {
-        console.error("getSubCategoriesService Error:", rawError);
-        return { data: [], error: rawError };
-      }
+      if (rawError) return { data: [], error: rawError };
       return { data: rawData, error: null };
     }
 
@@ -179,20 +147,14 @@ export const createSubCategoryService = async ({ name, category_id }) => {
   try {
     const slug = createSlug(name);
     const payload = { name, slug };
-    if (category_id) {
-      payload.category_id = category_id;
-    }
+    if (category_id) payload.category_id = category_id;
 
     const { data, error } = await supabase
       .from("sub_categories")
       .insert([payload])
       .select();
 
-    if (error) {
-      console.error("Supabase Sub-Categories Insert Error:", error);
-      return { data: null, error };
-    }
-
+    if (error) return { data: null, error };
     return { data, error: null };
   } catch (err) {
     console.error("createSubCategoryService Error:", err);
@@ -210,11 +172,7 @@ export const getDiamondShapesService = async () => {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Supabase Fetch Diamond Shapes Error:", error);
-      return { data: [], error };
-    }
-
+    if (error) return { data: [], error };
     return { data, error: null };
   } catch (err) {
     console.error("getDiamondShapesService Error:", err);
@@ -231,42 +189,34 @@ export const createDiamondShapeService = async ({ name, imageFile }) => {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       const filePath = `diamond_shapes/${fileName}`;
 
-      const { data: uploadData, error: uploadError } = await supabase
-        .storage
+      const { error: uploadError } = await supabase.storage
         .from("luxora")
-        .upload(filePath, imageFile, {
-          cacheControl: "3600",
-          upsert: true,
-        });
+        .upload(filePath, imageFile, { cacheControl: "3600", upsert: true });
 
       if (!uploadError) {
-        const { data: publicUrlData } = supabase
-          .storage
+        const { data: publicUrlData } = supabase.storage
           .from("luxora")
           .getPublicUrl(filePath);
         imageUrl = publicUrlData?.publicUrl || null;
-      } else {
-        console.warn("Diamond shape storage upload warning:", uploadError);
       }
     }
 
     const slug = createSlug(name);
-    const { data, error } = await supabase
+    let payload = { name, slug, image: imageUrl };
+
+    let { data, error } = await supabase
       .from("diamond_shapes")
-      .insert([
-        {
-          name,
-          slug,
-          image_url: imageUrl,
-        },
-      ])
+      .insert([payload])
       .select();
 
-    if (error) {
-      console.error("Supabase Diamond Shapes Insert Error:", error);
-      return { data: null, error };
+    if (error && error.message && error.message.includes("slug")) {
+      delete payload.slug;
+      const res = await supabase.from("diamond_shapes").insert([payload]).select();
+      data = res.data;
+      error = res.error;
     }
 
+    if (error) return { data: null, error };
     return { data, error: null };
   } catch (err) {
     console.error("createDiamondShapeService Error:", err);
@@ -284,11 +234,7 @@ export const getColorsService = async () => {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Supabase Fetch Colors Error:", error);
-      return { data: [], error };
-    }
-
+    if (error) return { data: [], error };
     return { data, error: null };
   } catch (err) {
     console.error("getColorsService Error:", err);
@@ -299,19 +245,33 @@ export const getColorsService = async () => {
 export const createColorService = async ({ name, hex_code }) => {
   try {
     const slug = createSlug(name);
-    const payload = {
+    let payload = {
       name,
-      slug,
-      hex_code: hex_code || "#E5C158",
+      hex_code: hex_code || "#D4AF37",
     };
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("colors")
       .insert([payload])
       .select();
 
     if (error) {
-      console.error("Supabase Colors Insert Error:", error);
+      const errMsg = (error.message || "").toLowerCase();
+      if (errMsg.includes("slug") && errMsg.includes("null")) {
+        payload.slug = slug;
+        const retry = await supabase.from("colors").insert([payload]).select();
+        data = retry.data;
+        error = retry.error;
+      } else if (errMsg.includes("slug") && errMsg.includes("not find")) {
+        delete payload.slug;
+        const retry = await supabase.from("colors").insert([payload]).select();
+        data = retry.data;
+        error = retry.error;
+      }
+    }
+
+    if (error) {
+      console.error("createColorService Error:", error);
       return { data: null, error };
     }
 
@@ -332,11 +292,7 @@ export const getRingSizesService = async () => {
       .select("*")
       .order("size_in_mm", { ascending: true });
 
-    if (error) {
-      console.error("Supabase Fetch Ring Sizes Error:", error);
-      return { data: [], error };
-    }
-
+    if (error) return { data: [], error };
     return { data, error: null };
   } catch (err) {
     console.error("getRingSizesService Error:", err);
@@ -356,11 +312,7 @@ export const createRingSizeService = async ({ name, size_in_mm }) => {
       .insert([payload])
       .select();
 
-    if (error) {
-      console.error("Supabase Ring Sizes Insert Error:", error);
-      return { data: null, error };
-    }
-
+    if (error) return { data: null, error };
     return { data, error: null };
   } catch (err) {
     console.error("createRingSizeService Error:", err);
@@ -369,75 +321,136 @@ export const createRingSizeService = async ({ name, size_in_mm }) => {
 };
 
 // ----------------------------------------------------
-// 7. PURITY SERVICE ('purity' table)
+// 7. KARATS SERVICE ('karats' table)
 // ----------------------------------------------------
-export const getPuritiesService = async () => {
+export const getKaratsService = async () => {
   try {
     const { data, error } = await supabase
-      .from("purity")
+      .from("karats")
       .select("*")
-      .order("carat", { ascending: true });
+      .order("name", { ascending: true });
 
     if (error) {
-      console.error("Supabase Fetch Purities Error:", error);
+      const { data: purityData, error: purityErr } = await supabase
+        .from("purity")
+        .select("*");
+      if (!purityErr && purityData) {
+        return { data: purityData.map((p) => ({ id: p.id, name: p.carat || p.name })), error: null };
+      }
       return { data: [], error };
     }
 
     return { data, error: null };
   } catch (err) {
-    console.error("getPuritiesService Error:", err);
+    console.error("getKaratsService Error:", err);
     return { data: [], error: err };
   }
 };
 
-export const createPurityService = async ({ carat, price }) => {
-  try {
-    const payload = {
-      carat,
-      price: parseFloat(price) || 0.00,
-    };
+export const getPuritiesService = getKaratsService;
 
+export const createKaratService = async ({ name, carat }) => {
+  try {
+    const karatName = (name || carat || "").trim().toUpperCase();
     const { data, error } = await supabase
-      .from("purity")
-      .insert([payload])
+      .from("karats")
+      .insert([{ name: karatName }])
       .select();
 
     if (error) {
-      console.error("Supabase Purity Insert Error:", error);
+      const { data: purityData, error: purityErr } = await supabase
+        .from("purity")
+        .insert([{ carat: karatName, price: 0.00 }])
+        .select();
+      if (!purityErr && purityData) {
+        return { data: purityData.map((p) => ({ id: p.id, name: p.carat })), error: null };
+      }
       return { data: null, error };
     }
 
     return { data, error: null };
   } catch (err) {
-    console.error("createPurityService Error:", err);
+    console.error("createKaratService Error:", err);
+    return { data: null, error: err };
+  }
+};
+
+export const createPurityService = createKaratService;
+
+// ----------------------------------------------------
+// 8. COLOR KARATS RELATIONSHIP SERVICE ('color_karats' table)
+// ----------------------------------------------------
+export const getColorKaratsService = async (colorId = null) => {
+  try {
+    let query = supabase.from("color_karats").select("*, colors(*), karats(*)");
+    if (colorId) {
+      query = query.eq("color_id", colorId);
+    }
+    const { data, error } = await query;
+    if (error) return { data: [], error };
+    return { data: data || [], error: null };
+  } catch (err) {
+    console.error("getColorKaratsService Error:", err);
+    return { data: [], error: err };
+  }
+};
+
+export const createColorKaratService = async ({ color_id, karat_id }) => {
+  try {
+    const { data, error } = await supabase
+      .from("color_karats")
+      .insert([{ color_id, karat_id }])
+      .select();
+
+    if (error) return { data: null, error };
+    return { data, error: null };
+  } catch (err) {
+    console.error("createColorKaratService Error:", err);
+    return { data: null, error: err };
+  }
+};
+
+export const deleteColorKaratService = async ({ color_id, karat_id }) => {
+  try {
+    const { data, error } = await supabase
+      .from("color_karats")
+      .delete()
+      .eq("color_id", color_id)
+      .eq("karat_id", karat_id);
+
+    if (error) return { data: null, error };
+    return { data, error: null };
+  } catch (err) {
+    console.error("deleteColorKaratService Error:", err);
     return { data: null, error: err };
   }
 };
 
 // ----------------------------------------------------
-// 8. PRODUCTS SERVICE ('products', 'product_variations', 'media_mapping' tables)
+// 9. PRODUCTS SERVICE ('products', 'product_variations', 'media_mapping' tables)
 // ----------------------------------------------------
 export const getProductsService = async () => {
   try {
-    // Perform parallel queries for products and reference tables to avoid PostgREST relationship join issues
     const [
       { data: products, error: prodErr },
       { data: collections },
       { data: categories },
       { data: subCategories },
       { data: colors },
-      { data: purities },
-      { data: mediaMappings },
+      { data: karats },
+      { data: diamondShapes },
       { data: productVariations },
+      { data: mediaMappings },
     ] = await Promise.all([
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("collections").select("id, name"),
       supabase.from("categories").select("id, name"),
       supabase.from("sub_categories").select("id, name"),
       supabase.from("colors").select("id, name, hex_code"),
-      supabase.from("purity").select("*"),
-      supabase.from("media_mapping").select("*"),
+      supabase.from("karats").select("id, name"),
+      supabase.from("diamond_shapes").select("id, name, slug, image"),
       supabase.from("product_variations").select("*"),
+      supabase.from("media_mapping").select("*"),
     ]);
 
     if (prodErr) {
@@ -445,7 +458,6 @@ export const getProductsService = async () => {
       return { data: [], error: prodErr };
     }
 
-    // Build lookup maps
     const collectionsMap = {};
     (collections || []).forEach((c) => (collectionsMap[c.id] = c.name));
 
@@ -458,15 +470,11 @@ export const getProductsService = async () => {
     const colorsMap = {};
     (colors || []).forEach((col) => (colorsMap[col.id] = col));
 
-    const puritiesMap = {};
-    (purities || []).forEach((p) => (puritiesMap[p.id] = p.carat || p.name || p.purity || p.value));
+    const karatsMap = {};
+    (karats || []).forEach((k) => (karatsMap[k.id] = k.name));
 
-    // Group media mappings and variations by product_id
-    const mediaByProd = {};
-    (mediaMappings || []).forEach((m) => {
-      if (!mediaByProd[m.product_id]) mediaByProd[m.product_id] = [];
-      mediaByProd[m.product_id].push(m);
-    });
+    const diamondShapesMap = {};
+    (diamondShapes || []).forEach((d) => (diamondShapesMap[d.id] = d));
 
     const variationsByProd = {};
     (productVariations || []).forEach((v) => {
@@ -474,65 +482,70 @@ export const getProductsService = async () => {
       variationsByProd[v.product_id].push(v);
     });
 
-    // Format products for UI
+    const mediaByVariation = {};
+    (mediaMappings || []).forEach((m) => {
+      mediaByVariation[m.product_variation_id] = m;
+    });
+
     const formattedProducts = (products || []).map((prod) => {
-      const prodMedia = mediaByProd[prod.id] || [];
       const prodVars = variationsByProd[prod.id] || [];
+      const comboList = Array.isArray(prod.variation_combo) ? prod.variation_combo : [];
 
-      const firstMedia = prodMedia[0];
-      const mainImage = firstMedia?.thumbnail || "";
-
-      const carats = Array.from(
-        new Set(
-          prodVars
-            .map((v) => puritiesMap[v.purity_id] || v.carat || v.purity || (v.sku && v.sku.match(/\b(10K|14K|16K|18K|20K|22K|24K)\b/gi)?.[0]?.toUpperCase()))
-            .filter(Boolean)
-        )
-      );
-
-      const colorNames = Array.from(
-        new Set(
-          prodMedia
-            .map((m) => colorsMap[m.color_id]?.name)
-            .filter(Boolean)
-        )
-      );
-
-      const colorMediaMap = {};
-      prodMedia.forEach((m) => {
-        const colorName = colorsMap[m.color_id]?.name;
-        if (colorName) {
-          colorMediaMap[colorName] = {
-            thumbnail: m.thumbnail,
-            images: m.images || [],
-            video_url: m.video_url || "",
-          };
+      let mainImage = prod.image || prod.thumbnail || "";
+      if (!mainImage && comboList.length > 0) {
+        const comboWithThumb = comboList.find(
+          (c) => c.media_mapping?.thumbnail || (Array.isArray(c.media_mapping?.images) && c.media_mapping.images[0])
+        );
+        if (comboWithThumb) {
+          mainImage = comboWithThumb.media_mapping?.thumbnail || comboWithThumb.media_mapping?.images[0];
         }
+      }
+
+      const caratsSet = new Set();
+      prodVars.forEach((v) => {
+        const kName = karatsMap[v.karat_id];
+        if (kName) caratsSet.add(kName);
+      });
+      comboList.forEach((c) => {
+        if (c.gold_karat) caratsSet.add(c.gold_karat);
+      });
+
+      const colorsSet = new Set();
+      prodVars.forEach((v) => {
+        const colObj = colorsMap[v.color_id];
+        if (colObj?.name) colorsSet.add(colObj.name);
+      });
+      comboList.forEach((c) => {
+        if (c.gold_color) colorsSet.add(c.gold_color);
       });
 
       return {
         id: prod.id,
+        sku: prod.sku,
         name: prod.name,
         slug: prod.slug,
-        sku: prod.sku,
         description: prod.description,
-        gender: prod.gender || null,
-        is_active: prod.is_active ?? true,
-        price: parseFloat(prod.price) || 0,
-        stock: parseInt(prod.stock, 10) || 0,
-        collection: collectionsMap[prod.collection_id] || "",
         collection_id: prod.collection_id,
-        category: categoriesMap[prod.category_id] || "",
+        collection: collectionsMap[prod.collection_id] || "",
         category_id: prod.category_id,
-        sub_category: subCategoriesMap[prod.sub_category_id] || "",
+        category: categoriesMap[prod.category_id] || "",
         sub_category_id: prod.sub_category_id,
+        sub_category: subCategoriesMap[prod.sub_category_id] || "",
+        gender: prod.gender || null,
+        base_price: parseFloat(prod.base_price || prod.price) || 0.00,
+        price: parseFloat(prod.base_price || prod.price) || 0.00,
+        discount_percentage: parseFloat(prod.discount_percentage) || 0.00,
+        stock: parseInt(prod.stock, 10) || 0,
+        net_weight: prod.net_weight ? parseFloat(prod.net_weight) : null,
+        gross_weight: prod.gross_weight ? parseFloat(prod.gross_weight) : null,
+        diamond_weight: prod.diamond_weight ? parseFloat(prod.diamond_weight) : null,
+        diamond_shape_id: prod.diamond_shape_id,
+        diamond_shape: diamondShapesMap[prod.diamond_shape_id]?.name || "",
+        is_active: prod.is_active ?? true,
         image: mainImage,
-        carats: carats,
-        colors: colorNames,
-        colorMedia: colorMediaMap,
-        rawMedia: prodMedia,
-        rawVariations: prodVars,
-        media_mapping: prodMedia,
+        carats: Array.from(caratsSet),
+        colors: Array.from(colorsSet),
+        variation_combo: comboList,
         product_variations: prodVars,
       };
     });
@@ -546,16 +559,9 @@ export const getProductsService = async () => {
 
 export const createProductService = async ({
   formData,
-  selectedCarats,
-  selectedColors,
-  colorMedia,
-  reduxPurities,
+  variationsData = [],
 }) => {
   try {
-    const isUUID = (str) =>
-      typeof str === "string" &&
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
-
     if (!formData.collection_id || !isUUID(formData.collection_id)) {
       return {
         data: null,
@@ -571,112 +577,40 @@ export const createProductService = async ({
     }
 
     const generatedSlug = createSlug(formData.name);
-    const skuCode = formData.sku || `JW-${Math.floor(100000 + Math.random() * 900000)}`;
+    const skuCode = formData.sku && formData.sku.trim()
+      ? formData.sku.trim()
+      : `JW-${Date.now().toString().slice(-4)}${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // 1. Upload color media to Supabase Storage bucket 'luxora'
-    const updatedColorMedia = {};
+    let basePrice = parseFloat(formData.base_price || formData.price) || 0.00;
+    let discountPct = parseFloat(formData.discount_percentage) || 0.00;
+    let stockQty = parseInt(formData.stock, 10) || 0;
 
-    for (const colorObj of selectedColors) {
-      const media = colorMedia[colorObj.name] || {};
-      let thumbnailUrl = typeof media.thumbnail === "string" && !media.thumbnail.startsWith("blob:") ? media.thumbnail : "";
-      let detailImageUrls = [];
-      let videoUrl = typeof media.video_url === "string" && !media.video_url.startsWith("blob:") ? media.video_url : "";
-
-      const timestamp = Date.now();
-      const folderPath = `products/${timestamp}_${createSlug(colorObj.name)}`;
-
-      // Upload Main Thumbnail if File object provided
-      if (media.thumbnailFile) {
-        const file = media.thumbnailFile;
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${folderPath}/thumb_${timestamp}.${fileExt}`;
-
-        const { error: uploadErr } = await supabase.storage
-          .from("luxora")
-          .upload(fileName, file, { cacheControl: "3600", upsert: true });
-
-        if (!uploadErr) {
-          const { data: pubUrl } = supabase.storage
-            .from("luxora")
-            .getPublicUrl(fileName);
-          thumbnailUrl = pubUrl?.publicUrl || thumbnailUrl;
-        } else {
-          console.warn("Thumbnail upload warning:", uploadErr);
-        }
-      }
-
-      // Upload Detail Images if File objects provided
-      if (media.imageFiles && media.imageFiles.length > 0) {
-        for (let idx = 0; idx < media.imageFiles.length; idx++) {
-          const file = media.imageFiles[idx];
-          const fileExt = file.name.split(".").pop();
-          const fileName = `${folderPath}/detail_${idx}_${timestamp}.${fileExt}`;
-
-          const { error: uploadErr } = await supabase.storage
-            .from("luxora")
-            .upload(fileName, file, { cacheControl: "3600", upsert: true });
-
-          if (!uploadErr) {
-            const { data: pubUrl } = supabase.storage
-              .from("luxora")
-              .getPublicUrl(fileName);
-            if (pubUrl?.publicUrl) detailImageUrls.push(pubUrl.publicUrl);
-          } else {
-            console.warn(`Detail image ${idx} upload warning:`, uploadErr);
-          }
-        }
-      } else if (Array.isArray(media.images)) {
-        detailImageUrls = media.images.filter((img) => typeof img === "string" && !img.startsWith("blob:"));
-      }
-
-      // Upload Video File if File object provided
-      if (media.videoFile) {
-        const file = media.videoFile;
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${folderPath}/video_${timestamp}.${fileExt}`;
-
-        const { error: uploadErr } = await supabase.storage
-          .from("luxora")
-          .upload(fileName, file, { cacheControl: "3600", upsert: true });
-
-        if (!uploadErr) {
-          const { data: pubUrl } = supabase.storage
-            .from("luxora")
-            .getPublicUrl(fileName);
-          videoUrl = pubUrl?.publicUrl || videoUrl;
-        } else {
-          console.warn("Video upload warning:", uploadErr);
-        }
-      }
-
-      updatedColorMedia[colorObj.id] = {
-        thumbnail: thumbnailUrl,
-        images: detailImageUrls,
-        video_url: videoUrl,
-      };
-    }
-
-    // 2. Insert Main Product Record with retry logic to remove non-existent columns in live DB
     let productPayload = {
-      name: formData.name,
       sku: skuCode,
+      name: formData.name,
       slug: generatedSlug,
       description: formData.description || null,
-      gender: formData.gender || null,
-      is_active: formData.is_active ?? true,
-      price: parseFloat(formData.price) || 0.00,
-      stock: parseInt(formData.stock, 10) || 0,
-      size: formData.size || formData.ring_size || null,
       collection_id: formData.collection_id,
       category_id: formData.category_id,
       sub_category_id: isUUID(formData.sub_category_id) ? formData.sub_category_id : null,
+      gender: formData.gender || null,
+      base_price: basePrice,
+      price: basePrice,
+      discount_percentage: discountPct,
+      stock: stockQty,
+      net_weight: formData.net_weight ? parseFloat(formData.net_weight) : null,
+      gross_weight: formData.gross_weight ? parseFloat(formData.gross_weight) : null,
+      diamond_weight: formData.diamond_weight ? parseFloat(formData.diamond_weight) : null,
+      diamond_shape_id: isUUID(formData.diamond_shape_id) ? formData.diamond_shape_id : null,
+      is_active: formData.is_active ?? true,
+      variation_combo: [],
     };
 
     let insertedProduct = null;
     let prodErr = null;
     let retryCount = 0;
 
-    while (retryCount < 6) {
+    while (retryCount < 15) {
       const res = await supabase
         .from("products")
         .insert([productPayload])
@@ -690,18 +624,33 @@ export const createProductService = async ({
       }
 
       prodErr = res.error;
-      const missingColMatch = res.error.message?.match(
-        /Could not find the '([^']+)' column/i
-      );
+      const errMsg = res.error.message || "";
 
-      if (missingColMatch && missingColMatch[1]) {
-        const colName = missingColMatch[1];
-        console.warn(`Database missing column '${colName}' in products table. Stripping column and retrying insert...`);
-        delete productPayload[colName];
+      if (errMsg.toLowerCase().includes("sku")) {
+        productPayload.sku = `JW-${Date.now().toString().slice(-4)}${Math.floor(1000 + Math.random() * 9000)}`;
         retryCount++;
-      } else {
-        break;
+        continue;
       }
+
+      if (errMsg.toLowerCase().includes("slug")) {
+        productPayload.slug = `${generatedSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
+        retryCount++;
+        continue;
+      }
+
+      // Regex matches "Could not find the 'col_name' column"
+      const missingColMatch = errMsg.match(/Could not find the '([^']+)' column/i);
+      if (missingColMatch && missingColMatch[1]) {
+        const missingCol = missingColMatch[1];
+        if (missingCol === "base_price" && !productPayload.price) {
+          productPayload.price = basePrice;
+        }
+        delete productPayload[missingCol];
+        retryCount++;
+        continue;
+      }
+
+      break;
     }
 
     if (prodErr || !insertedProduct) {
@@ -710,81 +659,116 @@ export const createProductService = async ({
     }
 
     const productId = insertedProduct.id;
+    const variationComboSnapshot = [];
 
-    // 3. Insert Product Variations (Color + Purity combinations)
-    if (selectedColors.length > 0 && selectedCarats.length > 0) {
-      let puritiesList = reduxPurities;
-      if (!puritiesList || puritiesList.length === 0) {
-        const { data: dbPurities } = await supabase.from("purity").select("id, carat");
-        puritiesList = dbPurities || [];
+    for (let idx = 0; idx < variationsData.length; idx++) {
+      const item = variationsData[idx];
+      if (!item.color_id || !item.karat_id) continue;
+
+      const { data: varData, error: varErr } = await supabase
+        .from("product_variations")
+        .insert([
+          {
+            product_id: productId,
+            color_id: item.color_id,
+            karat_id: item.karat_id,
+          },
+        ])
+        .select()
+        .single();
+
+      if (varErr || !varData) {
+        console.warn("Product variation insert warning:", varErr);
+        continue;
       }
 
-      const variationRows = [];
+      const variationId = varData.id;
+      const storageBasePath = `products/${productId}/variations/${variationId}`;
 
-      for (const colorObj of selectedColors) {
-        for (const caratVal of selectedCarats) {
-          let foundPurity = (puritiesList || []).find(
-            (p) => (typeof p === "string" ? p : p?.carat || p?.name) === caratVal
-          );
-          let purityId = typeof foundPurity === "object" ? foundPurity?.id : null;
+      let thumbUrl = item.media?.thumbnail || "";
+      let imgUrls = item.media?.images || [];
+      let videoUrl = item.media?.video || "";
 
-          if (!purityId && isUUID(caratVal)) {
-            purityId = caratVal;
-          }
-
-          if (!purityId) {
-            const { data: newPurity } = await supabase
-              .from("purity")
-              .insert([{ carat: caratVal, price: 0.00 }])
-              .select()
-              .single();
-            if (newPurity?.id) {
-              purityId = newPurity.id;
-              if (Array.isArray(puritiesList)) puritiesList.push(newPurity);
-            }
-          }
-
-          if (purityId && isUUID(purityId)) {
-            variationRows.push({
-              product_id: productId,
-              color_id: colorObj.id,
-              purity_id: purityId,
-              sku: `${skuCode}-${colorObj.name.substring(0, 2).toUpperCase()}-${caratVal}`,
-              price: parseFloat(formData.price) || 0.00,
-              stock: parseInt(formData.stock, 10) || 0,
-            });
-          }
+      if (item.thumbnailFile) {
+        const fileExt = item.thumbnailFile.name.split(".").pop();
+        const path = `${storageBasePath}/thumbnail/thumb_${Date.now()}.${fileExt}`;
+        const { error: upErr } = await supabase.storage.from("luxora").upload(path, item.thumbnailFile, { upsert: true });
+        if (!upErr) {
+          const { data: pubUrl } = supabase.storage.from("luxora").getPublicUrl(path);
+          thumbUrl = pubUrl?.publicUrl || thumbUrl;
         }
       }
 
-      if (variationRows.length > 0) {
-        const { error: varErr } = await supabase
-          .from("product_variations")
-          .insert(variationRows);
-        if (varErr) {
-          console.warn("Product variations insert warning:", varErr);
+      if (item.imageFiles && item.imageFiles.length > 0) {
+        const uploadedUrls = [];
+        const filesToUpload = item.imageFiles.slice(0, 5);
+        for (let imgIdx = 0; imgIdx < filesToUpload.length; imgIdx++) {
+          const file = filesToUpload[imgIdx];
+          const fileExt = file.name.split(".").pop();
+          const path = `${storageBasePath}/images/img_${imgIdx}_${Date.now()}.${fileExt}`;
+          const { error: upErr } = await supabase.storage.from("luxora").upload(path, file, { upsert: true });
+          if (!upErr) {
+            const { data: pubUrl } = supabase.storage.from("luxora").getPublicUrl(path);
+            if (pubUrl?.publicUrl) uploadedUrls.push(pubUrl.publicUrl);
+          }
+        }
+        if (uploadedUrls.length > 0) imgUrls = uploadedUrls;
+      }
+
+      if (item.videoFile) {
+        const fileExt = item.videoFile.name.split(".").pop();
+        const path = `${storageBasePath}/video/vid_${Date.now()}.${fileExt}`;
+        const { error: upErr } = await supabase.storage.from("luxora").upload(path, item.videoFile, { upsert: true });
+        if (!upErr) {
+          const { data: pubUrl } = supabase.storage.from("luxora").getPublicUrl(path);
+          videoUrl = pubUrl?.publicUrl || videoUrl;
         }
       }
-    }
 
-    // 4. Insert Media Mappings per Color
-    if (selectedColors.length > 0) {
-      const mediaRows = selectedColors.map((colorObj) => {
-        const media = updatedColorMedia[colorObj.id] || {};
-        return {
-          product_id: productId,
-          color_id: colorObj.id,
-          thumbnail: media.thumbnail || "",
-          images: media.images || [],
-          video_url: media.video_url || null,
-        };
-      });
+      const finalImgUrls = (imgUrls || []).slice(0, 5);
 
-      const { error: mediaErr } = await supabase
+      const { data: mediaData, error: mediaErr } = await supabase
         .from("media_mapping")
-        .insert(mediaRows);
+        .insert([
+          {
+            product_variation_id: variationId,
+            thumbnail: thumbUrl,
+            images: finalImgUrls,
+            video: videoUrl,
+          },
+        ])
+        .select()
+        .single();
+
       if (mediaErr) {
         console.warn("Media mapping insert warning:", mediaErr);
+      }
+
+      variationComboSnapshot.push({
+        color_id: item.color_id,
+        karat_id: item.karat_id,
+        gold_color: item.gold_color || "",
+        gold_karat: item.gold_karat || "",
+        product_variation_id: variationId,
+        media_mapping_id: mediaData?.id || null,
+        media_mapping: {
+          thumbnail: thumbUrl,
+          images: finalImgUrls,
+          video: videoUrl,
+        },
+      });
+    }
+
+    if (variationComboSnapshot.length > 0) {
+      try {
+        await supabase
+          .from("products")
+          .update({ variation_combo: variationComboSnapshot, updated_at: new Date().toISOString() })
+          .eq("id", productId);
+
+        insertedProduct.variation_combo = variationComboSnapshot;
+      } catch (e) {
+        console.warn("Failed to update variation_combo snapshot on product:", e);
       }
     }
 
@@ -795,168 +779,44 @@ export const createProductService = async ({
   }
 };
 
-export const toggleProductActiveService = async (productId, is_active) => {
-  try {
-    const isUUID = (str) =>
-      typeof str === "string" &&
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
-
-    if (!productId || !isUUID(productId)) {
-      return { data: null, error: { message: "Invalid Product ID provided." } };
-    }
-
-    // 1. Try updating 'is_active' column on products table
-    const { data: activeData, error: activeErr } = await supabase
-      .from("products")
-      .update({ is_active })
-      .eq("id", productId)
-      .select();
-
-    if (!activeErr) {
-      return { data: activeData, error: null };
-    }
-
-    // 2. If 'is_active' column is missing in live DB schema, try 'status' column as fallback
-    if (activeErr.message?.includes("is_active") || activeErr.code === "PGRST204" || activeErr.code === "42703") {
-      const { data: statusData, error: statusErr } = await supabase
-        .from("products")
-        .update({ status: is_active ? "active" : "inactive" })
-        .eq("id", productId)
-        .select();
-
-      if (!statusErr) {
-        return { data: statusData, error: null };
-      }
-
-      // 3. If neither column exists in live DB table, return optimistic success so UI UI toggle works without breaking
-      console.warn("Database schema missing active status column in products table:", activeErr.message);
-      return { data: [{ id: productId, is_active }], error: null };
-    }
-
-    return { data: null, error: activeErr };
-  } catch (err) {
-    console.error("toggleProductActiveService Error:", err);
-    return { data: null, error: err };
-  }
-};
-
 export const updateProductService = async ({
   productId,
   formData,
-  selectedCarats = [],
-  selectedColors = [],
-  colorMedia = {},
-  reduxPurities = [],
+  variationsData = [],
 }) => {
   try {
-    const isUUID = (str) =>
-      typeof str === "string" &&
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
-
     if (!productId || !isUUID(productId)) {
       return { data: null, error: { message: "Invalid Product ID provided for update." } };
     }
 
-    const generatedSlug = formData.name ? createSlug(formData.name) : undefined;
-    const skuCode = formData.sku || undefined;
+    let basePrice = parseFloat(formData.base_price || formData.price) || 0.00;
+    let discountPct = parseFloat(formData.discount_percentage) || 0.00;
+    let stockQty = parseInt(formData.stock, 10) || 0;
 
-    // 1. Upload new media files to Supabase Storage bucket 'luxora' if provided
-    const updatedColorMedia = {};
-
-    for (const colorObj of selectedColors) {
-      const media = colorMedia[colorObj.name] || {};
-      let thumbnailUrl = typeof media.thumbnail === "string" && !media.thumbnail.startsWith("blob:") ? media.thumbnail : "";
-      let detailImageUrls = [];
-      let videoUrl = typeof media.video_url === "string" && !media.video_url.startsWith("blob:") ? media.video_url : "";
-
-      const timestamp = Date.now();
-      const folderPath = `products/${timestamp}_${createSlug(colorObj.name)}`;
-
-      if (media.thumbnailFile) {
-        const file = media.thumbnailFile;
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${folderPath}/thumb_${timestamp}.${fileExt}`;
-
-        const { error: uploadErr } = await supabase.storage
-          .from("luxora")
-          .upload(fileName, file, { cacheControl: "3600", upsert: true });
-
-        if (!uploadErr) {
-          const { data: pubUrl } = supabase.storage
-            .from("luxora")
-            .getPublicUrl(fileName);
-          thumbnailUrl = pubUrl?.publicUrl || thumbnailUrl;
-        }
-      }
-
-      if (media.imageFiles && media.imageFiles.length > 0) {
-        for (let idx = 0; idx < media.imageFiles.length; idx++) {
-          const file = media.imageFiles[idx];
-          const fileExt = file.name.split(".").pop();
-          const fileName = `${folderPath}/detail_${idx}_${timestamp}.${fileExt}`;
-
-          const { error: uploadErr } = await supabase.storage
-            .from("luxora")
-            .upload(fileName, file, { cacheControl: "3600", upsert: true });
-
-          if (!uploadErr) {
-            const { data: pubUrl } = supabase.storage
-              .from("luxora")
-              .getPublicUrl(fileName);
-            if (pubUrl?.publicUrl) detailImageUrls.push(pubUrl.publicUrl);
-          }
-        }
-      } else if (Array.isArray(media.images)) {
-        detailImageUrls = media.images.filter((img) => typeof img === "string" && !img.startsWith("blob:"));
-      }
-
-      if (media.videoFile) {
-        const file = media.videoFile;
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${folderPath}/video_${timestamp}.${fileExt}`;
-
-        const { error: uploadErr } = await supabase.storage
-          .from("luxora")
-          .upload(fileName, file, { cacheControl: "3600", upsert: true });
-
-        if (!uploadErr) {
-          const { data: pubUrl } = supabase.storage
-            .from("luxora")
-            .getPublicUrl(fileName);
-          videoUrl = pubUrl?.publicUrl || videoUrl;
-        }
-      }
-
-      updatedColorMedia[colorObj.id] = {
-        thumbnail: thumbnailUrl,
-        images: detailImageUrls,
-        video_url: videoUrl,
-      };
-    }
-
-    // 2. Prepare Product Update Payload with dynamic missing column handling
     let updatePayload = {
-      ...(formData.name && { name: formData.name }),
-      ...(skuCode && { sku: skuCode }),
-      ...(generatedSlug && { slug: generatedSlug }),
-      ...(formData.description !== undefined && { description: formData.description || null }),
-      ...(formData.gender !== undefined && { gender: formData.gender || null }),
-      ...(formData.is_active !== undefined && { is_active: formData.is_active }),
-      ...(formData.price !== undefined && { price: parseFloat(formData.price) || 0.00 }),
-      ...(formData.stock !== undefined && { stock: parseInt(formData.stock, 10) || 0 }),
-      ...(formData.size || formData.ring_size ? { size: formData.size || formData.ring_size } : {}),
-      ...(isUUID(formData.collection_id) && { collection_id: formData.collection_id }),
-      ...(isUUID(formData.category_id) && { category_id: formData.category_id }),
-      ...(isUUID(formData.sub_category_id) && { sub_category_id: formData.sub_category_id }),
-      ...(isUUID(formData.diamond_shape_id) && { diamond_shape_id: formData.diamond_shape_id }),
+      name: formData.name,
+      description: formData.description || null,
+      collection_id: formData.collection_id,
+      category_id: formData.category_id,
+      sub_category_id: isUUID(formData.sub_category_id) ? formData.sub_category_id : null,
+      gender: formData.gender || null,
+      base_price: basePrice,
+      price: basePrice,
+      discount_percentage: discountPct,
+      stock: stockQty,
+      net_weight: formData.net_weight ? parseFloat(formData.net_weight) : null,
+      gross_weight: formData.gross_weight ? parseFloat(formData.gross_weight) : null,
+      diamond_weight: formData.diamond_weight ? parseFloat(formData.diamond_weight) : null,
+      diamond_shape_id: isUUID(formData.diamond_shape_id) ? formData.diamond_shape_id : null,
+      is_active: formData.is_active ?? true,
       updated_at: new Date().toISOString(),
     };
 
     let updatedProduct = null;
-    let prodErr = null;
+    let updateErr = null;
     let retryCount = 0;
 
-    while (retryCount < 6) {
+    while (retryCount < 15) {
       const res = await supabase
         .from("products")
         .update(updatePayload)
@@ -966,98 +826,131 @@ export const updateProductService = async ({
 
       if (!res.error) {
         updatedProduct = res.data;
-        prodErr = null;
+        updateErr = null;
         break;
       }
 
-      prodErr = res.error;
-      const missingColMatch = res.error.message?.match(
-        /Could not find the '([^']+)' column/i
-      );
+      updateErr = res.error;
+      const errMsg = res.error.message || "";
 
+      const missingColMatch = errMsg.match(/Could not find the '([^']+)' column/i);
       if (missingColMatch && missingColMatch[1]) {
-        const colName = missingColMatch[1];
-        console.warn(`Database missing column '${colName}' in products table. Stripping column and retrying update...`);
-        delete updatePayload[colName];
+        const missingCol = missingColMatch[1];
+        if (missingCol === "base_price" && !updatePayload.price) {
+          updatePayload.price = basePrice;
+        }
+        delete updatePayload[missingCol];
         retryCount++;
-      } else {
-        break;
+        continue;
       }
+
+      break;
     }
 
-    if (prodErr || !updatedProduct) {
-      console.error("Supabase Product Update Error:", prodErr);
-      return { data: null, error: prodErr };
-    }
+    if (updateErr) return { data: null, error: updateErr };
 
-    // 3. Update Product Variations if selected
-    if (selectedColors.length > 0 && selectedCarats.length > 0) {
+    if (variationsData && variationsData.length > 0) {
       await supabase.from("product_variations").delete().eq("product_id", productId);
 
-      let puritiesList = reduxPurities;
-      if (!puritiesList || puritiesList.length === 0) {
-        const { data: dbPurities } = await supabase.from("purity").select("id, carat");
-        puritiesList = dbPurities || [];
-      }
+      const variationComboSnapshot = [];
 
-      const variationRows = [];
-      for (const colorObj of selectedColors) {
-        for (const caratVal of selectedCarats) {
-          let foundPurity = (puritiesList || []).find(
-            (p) => (typeof p === "string" ? p : p?.carat || p?.name) === caratVal
-          );
-          let purityId = typeof foundPurity === "object" ? foundPurity?.id : null;
+      for (let idx = 0; idx < variationsData.length; idx++) {
+        const item = variationsData[idx];
+        if (!item.color_id || !item.karat_id) continue;
 
-          if (!purityId && isUUID(caratVal)) {
-            purityId = caratVal;
-          }
+        const { data: varData } = await supabase
+          .from("product_variations")
+          .insert([{ product_id: productId, color_id: item.color_id, karat_id: item.karat_id }])
+          .select()
+          .single();
 
-          if (!purityId) {
-            const { data: newPurity } = await supabase
-              .from("purity")
-              .insert([{ carat: caratVal, price: 0.00 }])
-              .select()
-              .single();
-            if (newPurity?.id) {
-              purityId = newPurity.id;
-              if (Array.isArray(puritiesList)) puritiesList.push(newPurity);
-            }
-          }
+        if (!varData) continue;
 
-          if (purityId && isUUID(purityId)) {
-            variationRows.push({
-              product_id: productId,
-              color_id: colorObj.id,
-              purity_id: purityId,
-              sku: `${skuCode || 'JW'}-${colorObj.name.substring(0, 2).toUpperCase()}-${caratVal}`,
-              price: parseFloat(formData.price) || 0.00,
-              stock: parseInt(formData.stock, 10) || 0,
-            });
+        const variationId = varData.id;
+        const storageBasePath = `products/${productId}/variations/${variationId}`;
+
+        let thumbUrl = item.media?.thumbnail || "";
+        let imgUrls = item.media?.images || [];
+        let videoUrl = item.media?.video || "";
+
+        if (item.thumbnailFile) {
+          const fileExt = item.thumbnailFile.name.split(".").pop();
+          const path = `${storageBasePath}/thumbnail/thumb_${Date.now()}.${fileExt}`;
+          const { error: upErr } = await supabase.storage.from("luxora").upload(path, item.thumbnailFile, { upsert: true });
+          if (!upErr) {
+            const { data: pubUrl } = supabase.storage.from("luxora").getPublicUrl(path);
+            thumbUrl = pubUrl?.publicUrl || thumbUrl;
           }
         }
+
+        if (item.imageFiles && item.imageFiles.length > 0) {
+          const uploadedUrls = [];
+          const filesToUpload = item.imageFiles.slice(0, 5);
+          for (let imgIdx = 0; imgIdx < filesToUpload.length; imgIdx++) {
+            const file = filesToUpload[imgIdx];
+            const fileExt = file.name.split(".").pop();
+            const path = `${storageBasePath}/images/img_${imgIdx}_${Date.now()}.${fileExt}`;
+            const { error: upErr } = await supabase.storage.from("luxora").upload(path, file, { upsert: true });
+            if (!upErr) {
+              const { data: pubUrl } = supabase.storage.from("luxora").getPublicUrl(path);
+              if (pubUrl?.publicUrl) uploadedUrls.push(pubUrl.publicUrl);
+            }
+          }
+          if (uploadedUrls.length > 0) imgUrls = uploadedUrls;
+        }
+
+        if (item.videoFile) {
+          const fileExt = item.videoFile.name.split(".").pop();
+          const path = `${storageBasePath}/video/vid_${Date.now()}.${fileExt}`;
+          const { error: upErr } = await supabase.storage.from("luxora").upload(path, item.videoFile, { upsert: true });
+          if (!upErr) {
+            const { data: pubUrl } = supabase.storage.from("luxora").getPublicUrl(path);
+            videoUrl = pubUrl?.publicUrl || videoUrl;
+          }
+        }
+
+        const finalImgUrls = (imgUrls || []).slice(0, 5);
+
+        const { data: mediaData } = await supabase
+          .from("media_mapping")
+          .insert([
+            {
+              product_variation_id: variationId,
+              thumbnail: thumbUrl,
+              images: finalImgUrls,
+              video: videoUrl,
+            },
+          ])
+          .select()
+          .single();
+
+        variationComboSnapshot.push({
+          color_id: item.color_id,
+          karat_id: item.karat_id,
+          gold_color: item.gold_color || "",
+          gold_karat: item.gold_karat || "",
+          product_variation_id: variationId,
+          media_mapping_id: mediaData?.id || null,
+          media_mapping: {
+            thumbnail: thumbUrl,
+            images: finalImgUrls,
+            video: videoUrl,
+          },
+        });
       }
 
-      if (variationRows.length > 0) {
-        await supabase.from("product_variations").insert(variationRows);
+      if (variationComboSnapshot.length > 0) {
+        try {
+          await supabase
+            .from("products")
+            .update({ variation_combo: variationComboSnapshot, updated_at: new Date().toISOString() })
+            .eq("id", productId);
+
+          updatedProduct.variation_combo = variationComboSnapshot;
+        } catch (e) {
+          console.warn("Failed to update variation_combo snapshot on product:", e);
+        }
       }
-    }
-
-    // 4. Update Media Mappings per Color if selected
-    if (selectedColors.length > 0) {
-      await supabase.from("media_mapping").delete().eq("product_id", productId);
-
-      const mediaRows = selectedColors.map((colorObj) => {
-        const media = updatedColorMedia[colorObj.id] || {};
-        return {
-          product_id: productId,
-          color_id: colorObj.id,
-          thumbnail: media.thumbnail || "",
-          images: media.images || [],
-          video_url: media.video_url || null,
-        };
-      });
-
-      await supabase.from("media_mapping").insert(mediaRows);
     }
 
     return { data: updatedProduct, error: null };
@@ -1069,140 +962,39 @@ export const updateProductService = async ({
 
 export const deleteProductService = async (productId) => {
   try {
-    const isUUID = (str) =>
-      typeof str === "string" &&
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
-
     if (!productId || !isUUID(productId)) {
-      return { data: null, error: { message: "Invalid Product ID provided for deletion." } };
+      return { data: null, error: { message: "Invalid Product ID." } };
     }
 
-    // 1. Retrieve all media associated with this product from media_mapping
-    const { data: mediaRows } = await supabase
-      .from("media_mapping")
-      .select("thumbnail, images, video_url")
-      .eq("product_id", productId);
-
-    const storagePathsToDelete = [];
-    if (mediaRows && mediaRows.length > 0) {
-      mediaRows.forEach((m) => {
-        const urls = [m.thumbnail, ...(m.images || []), m.video_url].filter(Boolean);
-        urls.forEach((urlStr) => {
-          if (typeof urlStr === "string" && urlStr.includes("/luxora/")) {
-            // Extract relative file path inside luxora bucket after '/luxora/'
-            const parts = urlStr.split("/luxora/");
-            if (parts[1]) {
-              storagePathsToDelete.push(decodeURIComponent(parts[1]));
-            }
-          }
-        });
-      });
-    }
-
-    // 2. Remove files from Supabase Storage bucket 'luxora' if any exist
-    if (storagePathsToDelete.length > 0) {
-      const { error: storageErr } = await supabase.storage
-        .from("luxora")
-        .remove(storagePathsToDelete);
-      if (storageErr) {
-        console.warn("Storage deletion warning:", storageErr);
-      }
-    }
-
-    // 3. Try RPC delete_product_with_media first (includes admin authentication check)
-    const { data: rpcData, error: rpcErr } = await supabase.rpc("delete_product_with_media", {
-      p_product_id: productId,
-    });
-
-    if (!rpcErr && rpcData) {
-      return { data: rpcData, error: null };
-    }
-
-    // Fallback to direct DB delete if RPC is not created yet
-    await supabase.from("media_mapping").delete().eq("product_id", productId);
-    await supabase.from("product_variations").delete().eq("product_id", productId);
-    const { data: deleteData, error: deleteErr } = await supabase
+    const { data, error } = await supabase
       .from("products")
       .delete()
-      .eq("id", productId)
-      .select();
+      .eq("id", productId);
 
-    if (deleteErr) {
-      console.error("Supabase Product Delete Error:", deleteErr);
-      return { data: null, error: deleteErr };
-    }
-
-    return { data: deleteData, error: null };
+    if (error) return { data: null, error };
+    return { data, error: null };
   } catch (err) {
     console.error("deleteProductService Error:", err);
     return { data: null, error: err };
   }
 };
 
-export const removeProductMediaService = async (productId, colorId = null) => {
+export const toggleProductActiveService = async ({ id, is_active }) => {
   try {
-    const isUUID = (str) =>
-      typeof str === "string" &&
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
-
-    if (!productId || !isUUID(productId)) {
-      return { data: null, error: { message: "Invalid Product ID provided for media removal." } };
+    if (!id || !isUUID(id)) {
+      return { data: null, error: { message: "Invalid Product ID." } };
     }
 
-    // 1. Query media_mapping for files to remove from storage bucket
-    let query = supabase
-      .from("media_mapping")
-      .select("thumbnail, images, video_url")
-      .eq("product_id", productId);
+    const { data, error } = await supabase
+      .from("products")
+      .update({ is_active: !!is_active, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select();
 
-    if (colorId && isUUID(colorId)) {
-      query = query.eq("color_id", colorId);
-    }
-
-    const { data: mediaRows } = await query;
-
-    const storagePathsToDelete = [];
-    if (mediaRows && mediaRows.length > 0) {
-      mediaRows.forEach((m) => {
-        const urls = [m.thumbnail, ...(m.images || []), m.video_url].filter(Boolean);
-        urls.forEach((urlStr) => {
-          if (typeof urlStr === "string" && urlStr.includes("/luxora/")) {
-            const parts = urlStr.split("/luxora/");
-            if (parts[1]) {
-              storagePathsToDelete.push(decodeURIComponent(parts[1]));
-            }
-          }
-        });
-      });
-    }
-
-    // 2. Remove actual media files from Storage bucket 'luxora'
-    if (storagePathsToDelete.length > 0) {
-      const { error: storageErr } = await supabase.storage
-        .from("luxora")
-        .remove(storagePathsToDelete);
-      if (storageErr) {
-        console.warn("Storage media removal warning:", storageErr);
-      }
-    }
-
-    // 3. Delete media_mapping records ONLY (Leaves products and product_variations untouched!)
-    let deleteQuery = supabase.from("media_mapping").delete().eq("product_id", productId);
-    if (colorId && isUUID(colorId)) {
-      deleteQuery = deleteQuery.eq("color_id", colorId);
-    }
-
-    const { data: deletedMedia, error: deleteErr } = await deleteQuery.select();
-
-    if (deleteErr) {
-      console.error("Supabase Remove Media Error:", deleteErr);
-      return { data: null, error: deleteErr };
-    }
-
-    return { data: deletedMedia, error: null };
+    if (error) return { data: null, error };
+    return { data, error: null };
   } catch (err) {
-    console.error("removeProductMediaService Error:", err);
+    console.error("toggleProductActiveService Error:", err);
     return { data: null, error: err };
   }
 };
-

@@ -66,18 +66,36 @@ export async function fetchActiveProductsService() {
       const prodMedia = mediaByProd[prod.id] || [];
       const prodVars = variationsByProd[prod.id] || [];
 
-      // Main image thumbnail
-      const firstMedia = prodMedia[0];
-      const mainImage = firstMedia?.thumbnail || prod.image || "";
+      const comboList = Array.isArray(prod.variation_combo) ? prod.variation_combo : [];
+      const variationList = Array.isArray(prod.variation) ? prod.variation : [];
 
-      // Extracted Carats
-      const carats = Array.from(
-        new Set(
-          prodVars
-            .map((v) => puritiesMap[v.purity_id] || v.carat || v.purity)
-            .filter(Boolean)
-        )
-      );
+      // Main image thumbnail from DB columns, relational media, or variation_combo
+      let mainImage = prod.image || prod.thumbnail || prodMedia[0]?.thumbnail || "";
+      if (!mainImage && comboList.length > 0) {
+        const comboWithThumb = comboList.find((c) => c.thumbnail || (Array.isArray(c.images) && c.images[0]));
+        if (comboWithThumb) {
+          mainImage = comboWithThumb.thumbnail || comboWithThumb.images[0];
+        }
+      }
+
+      // Extracted Carats / Purities
+      const caratsSet = new Set();
+      prodVars.forEach((v) => {
+        const val = puritiesMap[v.purity_id] || v.carat || v.purity;
+        if (val) caratsSet.add(val);
+      });
+      comboList.forEach((c) => {
+        if (c.karat) caratsSet.add(c.karat);
+      });
+      variationList.forEach((v) => {
+        const title = (v.customize_type_title || v.title || "").toLowerCase();
+        if (title.includes("karat") || title.includes("purity")) {
+          (v.sub_types || []).forEach((s) => {
+            if (s.text) caratsSet.add(s.text);
+          });
+        }
+      });
+      const carats = Array.from(caratsSet);
 
       // Extracted Metal Colors & Image Maps
       const colorMap = {};
@@ -86,7 +104,7 @@ export async function fetchActiveProductsService() {
       prodMedia.forEach((m) => {
         const cObj = colorsMap[m.color_id];
         if (cObj) {
-          colorMap[cObj.id] = cObj;
+          colorMap[cObj.id || cObj.name] = cObj;
         }
         if (m.color_id && (m.thumbnail || m.image_url)) {
           if (!colorImageMap[m.color_id]) {
@@ -94,6 +112,38 @@ export async function fetchActiveProductsService() {
           }
         }
       });
+
+      comboList.forEach((c) => {
+        const colorName = c.color || c.attributes?.["Gold Color"] || c.attributes?.["Color"];
+        if (colorName) {
+          if (!colorMap[colorName]) {
+            colorMap[colorName] = {
+              id: c.color_id || colorName,
+              name: colorName,
+              hex_code: c.hex || "#FFD700",
+            };
+          }
+          if (c.thumbnail || (Array.isArray(c.images) && c.images[0])) {
+            colorImageMap[c.color_id || colorName] = c.thumbnail || c.images[0];
+          }
+        }
+      });
+
+      variationList.forEach((v) => {
+        const title = (v.customize_type_title || v.title || "").toLowerCase();
+        if (title.includes("color")) {
+          (v.sub_types || []).forEach((s) => {
+            if (s.text && !colorMap[s.text]) {
+              colorMap[s.text] = {
+                id: s.id || s.text,
+                name: s.text,
+                hex_code: s.hex_code || "#FFD700",
+              };
+            }
+          });
+        }
+      });
+
       const colorObjs = Object.values(colorMap);
 
       const colObj = collectionsMap[prod.collection_id];
@@ -125,10 +175,13 @@ export async function fetchActiveProductsService() {
         sub_category_slug: subObj?.slug || makeSlug(subName),
         image: mainImage,
         carats,
+        karats: carats,
         colors: colorObjs,
         colorImageMap,
         rawMedia: prodMedia,
         rawVariations: prodVars,
+        variation: prod.variation || [],
+        variation_combo: prod.variation_combo || [],
         created_at: prod.created_at,
       };
     });
@@ -170,8 +223,12 @@ export async function fetchLatestProductsByCollectionService(collectionNameOrSlu
       });
 
       if (!rpcErr && rpcData && Array.isArray(rpcData)) {
+        const formattedData = rpcData.map((p) => ({
+          ...p,
+          karats: p.carats || [],
+        }));
         return {
-          data: rpcData,
+          data: formattedData,
           collection: rpcData[0]?.collection_name ? { name: rpcData[0].collection_name, id: rpcData[0].collection_id } : null,
           error: null,
         };

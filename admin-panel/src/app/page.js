@@ -5,10 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import DashboardView from "@/components/views/DashboardView";
 import CollectionTabView from "@/components/views/CollectionTabView";
 import ProductView from "@/components/views/ProductView";
-import DiamondView from "@/components/views/DiamondView";
-import RingSizeView from "@/components/views/RingSizeView";
-import CaratView from "@/components/views/CaratView";
-import GoldColorView from "@/components/views/GoldColorView";
+import CustomizeTabView from "@/components/views/CustomizeTabView";
 import ContactRequestsView from "@/components/views/ContactRequestsView";
 import CouponCodesView from "@/components/views/CouponCodesView";
 import AuthView from "@/components/views/AuthView";
@@ -255,10 +252,9 @@ export default function AdminPage() {
               onBack={() => setActiveTab("dashboard")}
             />
           )}
-          {activeTab === "diamond" && <DiamondView />}
-          {activeTab === "ring_size" && <RingSizeView />}
-          {activeTab === "carats" && <CaratView />}
-          {activeTab === "gold_color" && <GoldColorView />}
+          {activeTab === "customize" && (
+            <CustomizeTabView onBack={() => setActiveTab("dashboard")} />
+          )}
           {activeTab === "coupon_codes" && (
             <CouponCodesView
               items={couponCodes}

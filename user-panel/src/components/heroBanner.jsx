@@ -1,6 +1,7 @@
 import React from "react";
 import { LinkButton } from "./Buttons";
-import CustomImage from "./customImage";
+import CustomImg from "./CustomImg";
+
 
 const HeroBanner = ({
   title = "",
@@ -24,7 +25,7 @@ const HeroBanner = ({
   return (
     <div className={`relative ${className}`}>
       {desktopSrc && (
-        <CustomImage
+        <CustomImg
           srcAttr={desktopSrc}
           altAttr={altAttr}
           titleAttr={titleAttr}
@@ -34,7 +35,7 @@ const HeroBanner = ({
       )}
 
       {mobileSrc && (
-        <CustomImage
+        <CustomImg
           srcAttr={mobileSrc}
           altAttr={altAttr}
           titleAttr={titleAttr}

@@ -1,105 +1,96 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "@/lib/db";
+import { store } from "@/store/store";
+import { Provider, useDispatch, useSelector } from "react-redux";
+import {
+  fetchCart,
+  syncCart,
+  addToCart as addToCartAction,
+  updateQuantity as updateQuantityAction,
+  removeFromCart as removeFromCartAction,
+  clearCart as clearCartAction,
+  openCart as openCartAction,
+  closeCart as closeCartAction,
+  clearStockWarning as clearStockWarningAction,
+  selectCartItems,
+  selectIsCartOpen,
+  selectIsCartLoaded,
+  selectCartStockWarning,
+  selectCartSubtotal,
+  selectCartTotalCount,
+} from "@/store/slice/cartSlice";
 
 const CartContext = createContext();
 
-export function CartProvider({ children }) {
-  const [cartItems, setCartItems] = useState([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+function CartConsumerProvider({ children }) {
+  const dispatch = useDispatch();
+  const cartItems = useSelector(selectCartItems);
+  const isCartOpen = useSelector(selectIsCartOpen);
+  const isCartLoaded = useSelector(selectIsCartLoaded);
+  const stockWarning = useSelector(selectCartStockWarning);
+  const subtotal = useSelector(selectCartSubtotal);
+  const totalItemCount = useSelector(selectCartTotalCount);
+
+  const [user, setUser] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Load cart from localStorage on mount
+  // 1. Listen to Supabase Auth State
   useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem("jewellers_cart");
-      if (savedCart) {
-        setCartItems(JSON.parse(savedCart));
-      }
-    } catch (e) {
-      console.error("Failed to load cart from localStorage:", e);
+    let authSubscription = null;
+
+    if (supabase) {
+      supabase.auth.getUser().then(({ data }) => {
+        setUser(data?.user || null);
+      });
+
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user || null);
+      });
+      authSubscription = data?.subscription;
     }
+
     setIsMounted(true);
+
+    return () => {
+      authSubscription?.unsubscribe();
+    };
   }, []);
 
-  // Save cart to localStorage on change
+  // 2. Fetch User Cart via Redux Async Thunk on Auth Change
   useEffect(() => {
-    if (isMounted) {
-      try {
-        localStorage.setItem("jewellers_cart", JSON.stringify(cartItems));
-      } catch (e) {
-        console.error("Failed to save cart to localStorage:", e);
-      }
-    }
-  }, [cartItems, isMounted]);
+    if (!isMounted) return;
+    dispatch(fetchCart(user?.id || null));
+  }, [user, isMounted, dispatch]);
 
-  const openCart = () => setIsCartOpen(true);
-  const closeCart = () => setIsCartOpen(false);
+  // 3. Sync Cart Changes with Supabase Database via Redux Async Thunk
+  useEffect(() => {
+    if (!isMounted || !isCartLoaded) return;
+    dispatch(syncCart({ userId: user?.id || null, cartItems }));
+  }, [cartItems, user, isMounted, isCartLoaded, dispatch]);
+
+  // Helper Actions
+  const openCart = () => dispatch(openCartAction());
+  const closeCart = () => dispatch(closeCartAction());
+  const clearStockWarning = () => dispatch(clearStockWarningAction());
 
   const addToCart = (productData) => {
-    // Generate unique key based on product ID & variant choices
-    const itemKey = `${productData.id}-${productData.color || ""}-${productData.purity || ""}-${productData.ringSize || ""}`;
-
-    setCartItems((prev) => {
-      const existingIndex = prev.findIndex((item) => item.key === itemKey);
-      if (existingIndex > -1) {
-        const updated = [...prev];
-        updated[existingIndex].quantity += productData.quantity || 1;
-        return updated;
-      } else {
-        return [
-          ...prev,
-          {
-            key: itemKey,
-            id: productData.id,
-            name: productData.name,
-            price: parseFloat(productData.price || 0),
-            image: productData.image,
-            color: productData.color || "",
-            purity: productData.purity || "",
-            ringSize: productData.ringSize || "",
-            sku: productData.sku || "",
-            diamondType: productData.diamondType || "",
-            diamondShape: productData.diamondShape || "",
-            diamondQuality: productData.diamondQuality || "",
-            quantity: productData.quantity || 1,
-          },
-        ];
-      }
-    });
-
-    setIsCartOpen(true);
+    dispatch(addToCartAction(productData));
+    return { success: true };
   };
 
   const updateQuantity = (key, delta) => {
-    setCartItems((prev) =>
-      prev
-        .map((item) => {
-          if (item.key === key) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean)
-    );
+    dispatch(updateQuantityAction({ key, delta }));
   };
 
   const removeFromCart = (key) => {
-    setCartItems((prev) => prev.filter((item) => item.key !== key));
+    dispatch(removeFromCartAction(key));
   };
 
-  const clearCart = () => setCartItems([]);
-
-  const subtotal = cartItems.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0
-  );
-
-  const totalItemCount = cartItems.reduce(
-    (acc, item) => acc + item.quantity,
-    0
-  );
+  const clearCart = () => {
+    dispatch(clearCartAction());
+  };
 
   return (
     <CartContext.Provider
@@ -114,10 +105,22 @@ export function CartProvider({ children }) {
         clearCart,
         subtotal,
         totalItemCount,
+        user,
+        stockWarning,
+        clearStockWarning,
+        isCartLoaded,
       }}
     >
       {children}
     </CartContext.Provider>
+  );
+}
+
+export function CartProvider({ children }) {
+  return (
+    <Provider store={store}>
+      <CartConsumerProvider>{children}</CartConsumerProvider>
+    </Provider>
   );
 }
 

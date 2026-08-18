@@ -3,7 +3,17 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, ShoppingBag, Plus, Minus, Trash2, ArrowLeft, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  ChevronRight,
+  ShoppingBag,
+  Trash2,
+  ArrowLeft,
+  AlertCircle,
+  UserCheck,
+  CreditCard,
+  Lock,
+} from "lucide-react";
 import CustomImg from "@/components/CustomImg";
 import { useCart } from "@/context/CartContext";
 
@@ -25,7 +35,20 @@ const trustFeatures = [
 ];
 
 export default function CartPage() {
-  const { cartItems, updateQuantity, removeFromCart, subtotal, totalItemCount } = useCart();
+  const router = useRouter();
+
+  const {
+    cartItems,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    subtotal,
+    totalItemCount,
+    user,
+    stockWarning,
+    clearStockWarning,
+  } = useCart();
+
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [termsAgreed, setTermsAgreed] = useState(true);
@@ -41,9 +64,27 @@ export default function CartPage() {
 
   const grandTotal = Math.max(0, subtotal - discount);
 
+  const handleProceedToCheckout = () => {
+    if (!user) {
+      router.push("/login?redirect=/checkout");
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      alert("Your cart is empty.");
+      return;
+    }
+
+    if (!termsAgreed) {
+      alert("Please agree to the Terms & Conditions before checking out.");
+      return;
+    }
+
+    router.push("/checkout");
+  };
+
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans pb-24">
-      
       {/* Breadcrumb Navigation */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-10 lg:px-16 pt-6 pb-4">
         <nav className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 font-normal">
@@ -57,17 +98,50 @@ export default function CartPage() {
 
       {/* Main Container */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-10 lg:px-16 pt-2">
-        
-        {/* Title Header with Icon & Line */}
-        <div className="text-center py-6 relative flex flex-col items-center justify-center">
+        {/* Title Header with User Status */}
+        <div className="text-center py-6 relative flex flex-col items-center justify-center space-y-2">
           <div className="flex items-center gap-3">
             <ShoppingBag className="w-7 h-7 sm:w-8 sm:h-8 text-gray-900 stroke-[1.4]" />
             <h1 className="text-3xl sm:text-4xl font-canela font-normal text-gray-900 tracking-tight">
-              My Bag
+              My Bag ({totalItemCount})
             </h1>
           </div>
-          <div className="w-48 h-px bg-gray-200 mt-4" />
+
+          {/* User Auth Status Badge */}
+          {user ? (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700 font-mono">
+              <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>
+                Logged in as: <strong className="text-gray-900 font-semibold">{user.email}</strong>
+              </span>
+            </div>
+          ) : (
+            <div className="text-xs text-gray-500 font-sans">
+              Guest Bag —{" "}
+              <Link href="/login?redirect=/checkout" className="underline hover:text-black font-medium">
+                Login to sync your saved items across devices
+              </Link>
+            </div>
+          )}
+
+          <div className="w-48 h-px bg-gray-200 mt-2" />
         </div>
+
+        {/* Stock Validation Warning Alert */}
+        {stockWarning && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>{stockWarning}</span>
+            </div>
+            <button
+              onClick={clearStockWarning}
+              className="text-amber-700 hover:text-amber-950 underline text-xs font-bold shrink-0 cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {cartItems.length === 0 ? (
           /* Empty Bag View */
@@ -80,7 +154,7 @@ export default function CartPage() {
               You haven't added any luxury jewelry items to your bag yet. Explore our handcrafted collections to find your perfect piece.
             </p>
             <Link
-              href="/shop"
+              href="/collection/jewellery"
               className="mt-4 px-8 py-4 bg-[#202A4E] hover:bg-black text-white text-xs font-bold uppercase tracking-widest inline-flex items-center gap-2 transition-colors rounded-none"
             >
               <ArrowLeft className="w-4 h-4" /> Explore Shop
@@ -88,13 +162,14 @@ export default function CartPage() {
           </div>
         ) : (
           /* 2-Column Cart Grid */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start pt-8">
-            
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start pt-4">
             {/* Left Column: Items List */}
             <div className="lg:col-span-7 space-y-8">
               <div className="space-y-4">
                 {cartItems.map((item) => {
-                  // Build line for specs e.g. Size: 7 mm | Yellow Gold
+                  const maxStock = typeof item.stock === "number" ? item.stock : 999;
+                  const isMaxReached = item.quantity >= maxStock;
+
                   const specsList = [
                     item.ringSize ? `Size: ${item.ringSize}` : null,
                     item.purity,
@@ -106,7 +181,7 @@ export default function CartPage() {
                   return (
                     <div
                       key={item.key}
-                      className="border border-gray-200/80 p-5 sm:p-6 bg-white shadow-xs flex gap-5 sm:gap-6 items-start"
+                      className="border border-gray-200/80 p-5 sm:p-6 bg-white shadow-xs flex gap-5 sm:gap-6 items-start relative group"
                     >
                       {/* Image Thumbnail */}
                       <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white border border-gray-100 overflow-hidden shrink-0 flex items-center justify-center p-2">
@@ -142,6 +217,13 @@ export default function CartPage() {
                           </p>
                         )}
 
+                        {/* Stock status tag if limited stock */}
+                        {typeof item.stock === "number" && item.stock < 10 && (
+                          <div className="text-[11px] font-semibold text-amber-700 font-mono">
+                            In Stock: {item.stock} unit{item.stock > 1 ? "s" : ""} left
+                          </div>
+                        )}
+
                         {/* Quantity Counter & Trash Button */}
                         <div className="flex items-center gap-4 pt-3">
                           <span className="text-xs sm:text-sm text-gray-700 font-medium font-mono">Qty :</span>
@@ -149,7 +231,7 @@ export default function CartPage() {
                             <button
                               type="button"
                               onClick={() => updateQuantity(item.key, -1)}
-                              className="w-9 h-full flex items-center justify-center text-gray-600 hover:text-black text-sm select-none"
+                              className="w-9 h-full flex items-center justify-center text-gray-600 hover:text-black text-sm select-none cursor-pointer"
                             >
                               -
                             </button>
@@ -159,7 +241,13 @@ export default function CartPage() {
                             <button
                               type="button"
                               onClick={() => updateQuantity(item.key, 1)}
-                              className="w-9 h-full flex items-center justify-center text-gray-600 hover:text-black text-sm select-none"
+                              disabled={isMaxReached}
+                              className={`w-9 h-full flex items-center justify-center text-sm select-none ${
+                                isMaxReached
+                                  ? "text-gray-300 cursor-not-allowed bg-gray-50"
+                                  : "text-gray-600 hover:text-black cursor-pointer"
+                              }`}
+                              title={isMaxReached ? `Max available stock reached (${maxStock})` : "Increase quantity"}
                             >
                               +
                             </button>
@@ -174,35 +262,38 @@ export default function CartPage() {
                             <Trash2 className="w-4 h-4 stroke-[1.5]" />
                           </button>
                         </div>
-
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Continue Shopping Button */}
-              <div className="pt-4">
+              {/* Action Buttons */}
+              <div className="pt-4 flex items-center justify-between gap-4">
                 <Link
                   href="/collection/jewellery"
                   className="inline-block px-6 py-3 border border-gray-300 hover:border-black text-xs font-semibold uppercase tracking-wider text-gray-800 transition-colors rounded-none"
                 >
                   Continue Shopping
                 </Link>
+                <button
+                  type="button"
+                  onClick={clearCart}
+                  className="px-4 py-3 text-xs font-semibold text-red-600 hover:underline uppercase tracking-wider cursor-pointer"
+                >
+                  Clear Bag
+                </button>
               </div>
-
             </div>
 
             {/* Right Column: Order Summary Card */}
             <div className="lg:col-span-5">
               <div className="lg:sticky lg:top-24 space-y-6">
-                
                 <h2 className="text-2xl font-canela font-normal text-gray-900">
                   Order Summary
                 </h2>
 
                 <div className="border border-gray-200/80 p-6 sm:p-8 space-y-6 bg-white shadow-lg">
-                  
                   {/* Promo Code Input */}
                   <form onSubmit={handleApplyPromo} className="space-y-2">
                     <label className="block text-xs text-gray-600 font-medium">Promo code</label>
@@ -237,11 +328,19 @@ export default function CartPage() {
                       </span>
                     </div>
 
+                    <div className="flex items-center justify-between text-gray-700">
+                      <span>Payment Method:</span>
+                      <span className="font-bold text-sky-900 font-mono flex items-center gap-1">
+                        <Lock className="w-3.5 h-3.5 text-sky-700" />
+                        Razorpay Secure
+                      </span>
+                    </div>
+
                     <div className="w-full h-px bg-gray-200 my-2" />
 
                     <div className="flex items-center justify-between text-base sm:text-lg text-gray-900 font-medium pt-1">
-                      <span>Total</span>
-                      <span>₹{grandTotal.toLocaleString("en-IN")}</span>
+                      <span>Total Amount</span>
+                      <span className="font-bold text-amber-700">₹{grandTotal.toLocaleString("en-IN")}</span>
                     </div>
                   </div>
 
@@ -266,20 +365,16 @@ export default function CartPage() {
                   <div className="pt-2">
                     <button
                       type="button"
-                      onClick={() => alert("Proceeding to checkout page...")}
-                      className="w-full bg-[#202A4E] hover:bg-black text-white font-bold tracking-widest py-4 uppercase text-sm transition-colors duration-200 rounded-none cursor-pointer"
+                      onClick={handleProceedToCheckout}
+                      className="w-full bg-[#202A4E] hover:bg-black text-white font-bold tracking-widest py-4 uppercase text-sm transition-colors duration-200 rounded-none cursor-pointer flex items-center justify-center gap-2"
                     >
-                      CHECKOUT
+                      <CreditCard className="w-4 h-4" />
+                      PROCEED TO CHECKOUT
                     </button>
                   </div>
-
-
-
                 </div>
-
               </div>
             </div>
-
           </div>
         )}
 
@@ -304,9 +399,7 @@ export default function CartPage() {
             ))}
           </div>
         </div>
-
       </div>
-
     </div>
   );
 }

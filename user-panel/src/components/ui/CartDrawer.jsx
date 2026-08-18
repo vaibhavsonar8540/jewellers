@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { X, ShoppingBag, Plus, Minus, Trash2 } from "lucide-react";
+import { X, ShoppingBag, Plus, Minus, Trash2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import CustomImg from "@/components/CustomImg";
 import { useCart } from "@/context/CartContext";
@@ -15,6 +15,9 @@ export default function CartDrawer() {
     removeFromCart,
     subtotal,
     totalItemCount,
+    user,
+    stockWarning,
+    clearStockWarning,
   } = useCart();
 
   const [termsAgreed, setTermsAgreed] = useState(true);
@@ -43,12 +46,18 @@ export default function CartDrawer() {
 
       {/* Slide-in Drawer Container */}
       <div className="fixed inset-y-0 right-0 max-w-full sm:max-w-[460px] w-full bg-white shadow-2xl z-[1001] flex flex-col animate-in slide-in-from-right duration-300 ease-out font-sans">
-        
         {/* Drawer Header */}
         <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
-          <h3 className="text-xl sm:text-2xl font-canela font-normal text-gray-900 tracking-tight">
-            Your Bag ({totalItemCount})
-          </h3>
+          <div>
+            <h3 className="text-xl sm:text-2xl font-canela font-normal text-gray-900 tracking-tight">
+              Your Bag ({totalItemCount})
+            </h3>
+            {user?.email && (
+              <p className="text-[11px] text-gray-500 font-mono">
+                User: {user.email}
+              </p>
+            )}
+          </div>
           <button
             onClick={closeCart}
             className="p-1.5 rounded-full text-gray-500 hover:text-black transition-colors cursor-pointer"
@@ -57,6 +66,22 @@ export default function CartDrawer() {
             <X className="w-5 h-5 stroke-[1.5]" />
           </button>
         </div>
+
+        {/* Stock Warning Banner inside Drawer */}
+        {stockWarning && (
+          <div className="mx-6 mt-4 p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-xs font-semibold flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>{stockWarning}</span>
+            </div>
+            <button
+              onClick={clearStockWarning}
+              className="text-amber-700 hover:text-amber-950 underline text-[11px] shrink-0 cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Drawer Body / Cart Items */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -81,7 +106,9 @@ export default function CartDrawer() {
           ) : (
             <div className="space-y-6 divide-y divide-gray-100">
               {cartItems.map((item) => {
-                // Build specs string e.g. 14K | Rose Gold | Oval | Good - F,VS2
+                const maxStock = typeof item.stock === "number" ? item.stock : 999;
+                const isMaxReached = item.quantity >= maxStock;
+
                 const specs = [
                   item.purity,
                   item.color,
@@ -93,7 +120,6 @@ export default function CartDrawer() {
 
                 return (
                   <div key={item.key} className="pt-6 first:pt-0 flex gap-4 items-start">
-                    
                     {/* Thumbnail Image */}
                     <div className="w-24 h-24 bg-white border border-gray-100 overflow-hidden shrink-0 flex items-center justify-center p-2">
                       <CustomImg
@@ -128,6 +154,13 @@ export default function CartDrawer() {
                         </p>
                       )}
 
+                      {/* Stock limit notice */}
+                      {typeof item.stock === "number" && item.stock < 10 && (
+                        <p className="text-[10px] font-semibold text-amber-700 font-mono">
+                          In Stock: {item.stock} left
+                        </p>
+                      )}
+
                       {/* Quantity Controls & Trash */}
                       <div className="flex items-center gap-4 pt-3">
                         <span className="text-xs text-gray-700 font-medium">Qty</span>
@@ -145,7 +178,13 @@ export default function CartDrawer() {
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.key, 1)}
-                            className="w-7 h-full flex items-center justify-center text-gray-600 hover:text-black text-sm select-none"
+                            disabled={isMaxReached}
+                            className={`w-7 h-full flex items-center justify-center text-sm select-none ${
+                              isMaxReached
+                                ? "text-gray-300 cursor-not-allowed bg-gray-50"
+                                : "text-gray-600 hover:text-black cursor-pointer"
+                            }`}
+                            title={isMaxReached ? `Stock limit reached (${maxStock})` : "Increase"}
                           >
                             +
                           </button>
@@ -160,9 +199,7 @@ export default function CartDrawer() {
                           <Trash2 className="w-4 h-4 stroke-[1.5]" />
                         </button>
                       </div>
-
                     </div>
-
                   </div>
                 );
               })}
@@ -173,7 +210,6 @@ export default function CartDrawer() {
         {/* Drawer Footer Summary */}
         {cartItems.length > 0 && (
           <div className="p-6 border-t border-gray-200 bg-white space-y-4 sticky bottom-0 z-10">
-            
             {/* Subtotal */}
             <div className="flex items-center justify-between text-base font-sans">
               <span className="font-normal text-gray-900">Sub Total:</span>
@@ -221,12 +257,8 @@ export default function CartDrawer() {
                 VIEW YOUR BAG
               </Link>
             </div>
-
-
-
           </div>
         )}
-
       </div>
     </div>
   );

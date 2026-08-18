@@ -6,8 +6,9 @@ const initialState = {
   subCategory: [],
   diamondShapes: [],
   colors: [],
+  karats: [],
+  colorKarats: [],
   ringSizes: [],
-  purities: [],
 };
 
 const commonSlice = createSlice({
@@ -15,25 +16,28 @@ const commonSlice = createSlice({
   initialState,
   reducers: {
     setCollection: (state, action) => {
-      state.collection = action.payload;
+      state.collection = action.payload || [];
     },
     setCategory: (state, action) => {
-      state.category = action.payload;
+      state.category = action.payload || [];
     },
     setSubCategory: (state, action) => {
-      state.subCategory = action.payload;
+      state.subCategory = action.payload || [];
     },
     setDiamondShapes: (state, action) => {
-      state.diamondShapes = action.payload;
+      state.diamondShapes = action.payload || [];
     },
     setColors: (state, action) => {
-      state.colors = action.payload;
+      state.colors = action.payload || [];
+    },
+    setKarats: (state, action) => {
+      state.karats = action.payload || [];
+    },
+    setColorKarats: (state, action) => {
+      state.colorKarats = action.payload || [];
     },
     setRingSizes: (state, action) => {
-      state.ringSizes = action.payload;
-    },
-    setPurities: (state, action) => {
-      state.purities = action.payload;
+      state.ringSizes = action.payload || [];
     },
   },
 });
@@ -44,8 +48,9 @@ export const {
   setSubCategory,
   setDiamondShapes,
   setColors,
+  setKarats,
+  setColorKarats,
   setRingSizes,
-  setPurities,
 } = commonSlice.actions;
 
 export default commonSlice.reducer;
