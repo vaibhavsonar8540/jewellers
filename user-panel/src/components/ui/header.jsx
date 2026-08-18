@@ -243,10 +243,19 @@ const Header = () => {
                   <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl border border-gray-200 shadow-xl z-[999] py-2 animate-in fade-in duration-150">
                     <div className="px-3.5 py-2 border-b border-gray-100 space-y-0.5">
                       <p className="text-xs font-bold text-gray-900 truncate">
-                        {user.user_metadata?.name || "Account"}
+                        {user.user_metadata?.name || user.user_metadata?.full_name || "Account"}
                       </p>
                       <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
                     </div>
+
+                    <Link
+                      href="/profile"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="w-full text-left px-3.5 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 flex items-center gap-2 transition-colors cursor-pointer border-b border-gray-100"
+                    >
+                      <User className="w-4 h-4 text-slate-700" />
+                      <span>My Profile</span>
+                    </Link>
 
                     <Link
                       href="/orders"
