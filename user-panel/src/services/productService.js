@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/db";
+import { sortGoldColors } from "@/lib/productService";
 
 /**
  * Service handling all Supabase queries for Product details and variations.
@@ -112,7 +113,7 @@ export const productService = {
     return {
       product: prodData,
       mediaList: mediaData || [],
-      colors: finalColors,
+      colors: sortGoldColors(finalColors),
       purities: finalPurities,
       ringSizes: availableSizes,
       diamondShape: diamondShapeData || (dynamicDiamondShapes.length > 0 ? dynamicDiamondShapes[0] : null),

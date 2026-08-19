@@ -218,6 +218,8 @@ export default function DiamondShapeSlider({ autoPlay = true, autoPlayInterval =
               {/* Prev Arrow, Description, Next Arrow */}
               <div className="flex items-center justify-center gap-3 sm:gap-4 pt-1">
                 <button
+                  type="button"
+                  suppressHydrationWarning
                   onClick={prevSlide}
                   aria-label="Previous shape"
                   className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-gray-300 bg-white hover:bg-gray-900 hover:text-white hover:border-gray-900 flex items-center justify-center text-gray-700 transition-all duration-200 cursor-pointer shrink-0"
@@ -230,6 +232,8 @@ export default function DiamondShapeSlider({ autoPlay = true, autoPlayInterval =
                 </p>
 
                 <button
+                  type="button"
+                  suppressHydrationWarning
                   onClick={nextSlide}
                   aria-label="Next shape"
                   className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-gray-300 bg-white hover:bg-gray-900 hover:text-white hover:border-gray-900 flex items-center justify-center text-gray-700 transition-all duration-200 cursor-pointer shrink-0"

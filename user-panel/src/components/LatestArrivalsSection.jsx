@@ -92,6 +92,7 @@ export default function LatestArrivalsSection({
           <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
+              suppressHydrationWarning
               onClick={() => scroll("left")}
               aria-label="Previous products"
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-gray-300 bg-white hover:bg-gray-900 hover:text-white hover:border-gray-900 flex items-center justify-center text-gray-700 transition-all duration-200 cursor-pointer"
@@ -100,6 +101,7 @@ export default function LatestArrivalsSection({
             </button>
             <button
               type="button"
+              suppressHydrationWarning
               onClick={() => scroll("right")}
               aria-label="Next products"
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-gray-300 bg-white hover:bg-gray-900 hover:text-white hover:border-gray-900 flex items-center justify-center text-gray-700 transition-all duration-200 cursor-pointer"

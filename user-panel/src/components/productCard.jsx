@@ -4,10 +4,12 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Package } from "lucide-react";
 import CustomImg from "@/components/CustomImg";
+import { sortGoldColors } from "@/lib/productService";
 
 export default function ProductCard({ product }) {
   // Set initial active color to the first color in the product's colors array
-  const initialColorId = product?.colors?.[0]?.id || product?.colors?.[0]?.name || null;
+  const sortedColors = sortGoldColors(product?.colors || []);
+  const initialColorId = sortedColors?.[0]?.id || sortedColors?.[0]?.name || null;
   const [activeColorId, setActiveColorId] = useState(initialColorId);
 
   // Compute first fallback thumbnail image from variation_combo or variationCombo
@@ -21,7 +23,7 @@ export default function ProductCard({ product }) {
     (Array.isArray(firstCombo?.media_mapping?.images) && firstCombo?.media_mapping?.images[0]);
 
   // Find active color object or name
-  const activeColorObj = product?.colors?.find(
+  const activeColorObj = sortedColors?.find(
     (c) => c.id === activeColorId || c.name === activeColorId
   );
   const activeColorName = activeColorObj?.name || activeColorId;
@@ -111,15 +113,16 @@ export default function ProductCard({ product }) {
           </div>
 
           {/* Metal Color Circles Swatches */}
-          {product?.colors && product.colors.length > 0 && (
+          {sortedColors && sortedColors.length > 0 && (
             <div className="flex items-center gap-2 px-1">
-              {product.colors.map((col, idx) => {
+              {sortedColors.map((col, idx) => {
                 const colorKey = col.id || col.name || idx;
                 const isActive = activeColorId === col.id || activeColorId === col.name || (!activeColorId && idx === 0);
                 return (
                   <button
                     key={colorKey}
                     type="button"
+                    suppressHydrationWarning
                     title={col.name || "Metal Color"}
                     onClick={(e) => {
                       e.preventDefault();

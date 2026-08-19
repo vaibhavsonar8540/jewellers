@@ -224,6 +224,26 @@ export const createDiamondShapeService = async ({ name, imageFile }) => {
   }
 };
 
+export const sortGoldColors = (colorList) => {
+  if (!Array.isArray(colorList)) return colorList;
+
+  const getPriority = (item) => {
+    if (!item) return 4;
+    const name = (
+      typeof item === "string"
+        ? item
+        : item?.name || item?.gold_color || item?.color || item?.slug || item?.text || ""
+    ).toLowerCase();
+
+    if (name.includes("yellow")) return 1;
+    if (name.includes("rose") || name.includes("pink")) return 2;
+    if (name.includes("white") || name.includes("silver") || name.includes("platinum")) return 3;
+    return 4;
+  };
+
+  return [...colorList].sort((a, b) => getPriority(a) - getPriority(b));
+};
+
 // ----------------------------------------------------
 // 5. COLORS SERVICE ('colors' table)
 // ----------------------------------------------------
@@ -235,7 +255,7 @@ export const getColorsService = async () => {
       .order("created_at", { ascending: false });
 
     if (error) return { data: [], error };
-    return { data, error: null };
+    return { data: sortGoldColors(data || []), error: null };
   } catch (err) {
     console.error("getColorsService Error:", err);
     return { data: [], error: err };

@@ -61,6 +61,7 @@ import {
   fetchKaratsAction,
   fetchDiamondShapesAction,
 } from "@/action/common.action";
+import { sortGoldColors } from "@/service/common.service";
 
 export default function ProductView({ onBack }) {
   const dispatch = useDispatch();
@@ -149,6 +150,21 @@ export default function ProductView({ onBack }) {
     );
   }, [reduxCollections]);
 
+  // Selected Collection Object & Check if Silver Jewelry
+  const selectedCollectionObj = useMemo(() => {
+    if (!formData.collection_id) return null;
+    return (reduxCollections || []).find(
+      (c) => c.id === formData.collection_id || c.name === formData.collection_id
+    );
+  }, [reduxCollections, formData.collection_id]);
+
+  const isSilverJewelry = useMemo(() => {
+    if (!selectedCollectionObj) return false;
+    const name = (selectedCollectionObj.name || "").toLowerCase();
+    const slug = (selectedCollectionObj.slug || "").toLowerCase();
+    return name.includes("silver") || slug.includes("silver");
+  }, [selectedCollectionObj]);
+
   // Cascading Categories based on selected Collection
   const availableCategories = useMemo(() => {
     if (!formData.collection_id) return reduxCategories || [];
@@ -168,7 +184,7 @@ export default function ProductView({ onBack }) {
   // Dynamic Variation Matrix: Combination of Selected Gold Colors + Gold Karats
   const generatedVariations = useMemo(() => {
     const variations = [];
-    const colorsList = reduxColors.filter((c) => selectedColorIds.includes(c.id));
+    const colorsList = sortGoldColors(reduxColors.filter((c) => selectedColorIds.includes(c.id)));
     const karatsList = reduxKarats.filter((k) => selectedKaratIds.includes(k.id));
 
     if (colorsList.length > 0 && karatsList.length > 0) {
@@ -391,7 +407,7 @@ export default function ProductView({ onBack }) {
       return;
     }
 
-    if (!formData.category_id) {
+    if (!formData.category_id && !isSilverJewelry) {
       alert("Please select a Category for the product!");
       return;
     }
@@ -641,10 +657,11 @@ export default function ProductView({ onBack }) {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Category <span className="text-red-500">*</span>
+                    Category {!isSilverJewelry && <span className="text-red-500">*</span>}
+                    {isSilverJewelry && <span className="text-[10px] text-amber-600 font-normal lowercase ml-1">(optional for silver)</span>}
                   </label>
                   <select
-                    required
+                    required={!isSilverJewelry}
                     value={formData.category_id}
                     onChange={(e) => setFormData({ ...formData, category_id: e.target.value, sub_category_id: "" })}
                     disabled={!formData.collection_id}
@@ -799,7 +816,7 @@ export default function ProductView({ onBack }) {
                   Select Gold Colors ({selectedColorIds.length} Selected)
                 </label>
                 <div className="flex flex-wrap gap-3">
-                  {reduxColors.map((col) => {
+                  {sortGoldColors(reduxColors).map((col) => {
                     const isSelected = selectedColorIds.includes(col.id);
                     return (
                       <button

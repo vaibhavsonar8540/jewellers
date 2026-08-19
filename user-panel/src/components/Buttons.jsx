@@ -24,6 +24,7 @@ export const Button = ({
 }) => {
   return (
     <button
+      suppressHydrationWarning
       className={`${getVariant(variant)} px-5 py-2 rounded-sm transition-all duration-300 ${className}`}
       {...props}
     >

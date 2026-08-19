@@ -1,5 +1,25 @@
 import { supabase } from "@/lib/db";
 
+export const sortGoldColors = (colorList) => {
+  if (!Array.isArray(colorList)) return colorList;
+
+  const getPriority = (item) => {
+    if (!item) return 4;
+    const name = (
+      typeof item === "string"
+        ? item
+        : item?.name || item?.gold_color || item?.color || item?.slug || item?.text || ""
+    ).toLowerCase();
+
+    if (name.includes("yellow")) return 1;
+    if (name.includes("rose") || name.includes("pink")) return 2;
+    if (name.includes("white") || name.includes("silver") || name.includes("platinum")) return 3;
+    return 4;
+  };
+
+  return [...colorList].sort((a, b) => getPriority(a) - getPriority(b));
+};
+
 /**
  * Fetch all ACTIVE products along with taxonomy maps for user panel.
  */
@@ -144,7 +164,7 @@ export async function fetchActiveProductsService() {
         }
       });
 
-      const colorObjs = Object.values(colorMap);
+      const colorObjs = sortGoldColors(Object.values(colorMap));
 
       const colObj = collectionsMap[prod.collection_id];
       const catObj = categoriesMap[prod.category_id];
@@ -191,7 +211,7 @@ export async function fetchActiveProductsService() {
       collections: collections || [],
       categories: categories || [],
       subCategories: subCategories || [],
-      colors: colors || [],
+      colors: sortGoldColors(colors || []),
       purities: purities || [],
       error: null,
     };

@@ -7,6 +7,7 @@ import { ChevronRight, ArrowLeft, Loader2, Check, Plus, Minus, Package, Play } f
 import CustomImg from "@/components/CustomImg";
 import { useCart } from "@/context/CartContext";
 import { useDispatch, useSelector } from "react-redux";
+import { sortGoldColors } from "@/lib/productService";
 import {
   fetchProductDetails,
   setSelectedColor,
@@ -172,7 +173,7 @@ export default function ProductDetailPage({ params }) {
       ? product.karats.map((k) => ({ id: k, name: k, carat: k }))
       : [];
 
-  const colorsToDisplay =
+  const colorsToDisplay = sortGoldColors(
     productColors && productColors.length > 0
       ? productColors
       : Array.isArray(product?.variation_combo)
@@ -190,7 +191,8 @@ export default function ProductDetailPage({ params }) {
               .filter(([k, v]) => v.name)
           ).values()
         )
-      : [];
+      : []
+  );
 
   const diamondShapesToDisplay =
     diamondShapesList && diamondShapesList.length > 0

@@ -5,6 +5,7 @@ import { Palette, Plus, Search, PackageOpen, X, Loader2, AlertCircle, MoreVertic
 import { useDispatch, useSelector } from "react-redux";
 import { setColors } from "@/store/slice/commonSlice";
 import { fetchColorsAction, createColorAction } from "@/action/common.action";
+import { sortGoldColors } from "@/service/common.service";
 
 export default function GoldColorView() {
   const [openDialog, setOpenDialog] = useState(false);
@@ -81,10 +82,13 @@ export default function GoldColorView() {
     }
   };
 
-  const filtered = colors.filter((c) =>
-    c?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c?.slug?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c?.hex_code?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = sortGoldColors(
+    colors.filter(
+      (c) =>
+        c?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c?.slug?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c?.hex_code?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   return (
