@@ -13,6 +13,27 @@ import { fetchActiveProductsService } from "@/lib/productService";
 import { supabase } from "@/lib/db";
 import { useCart } from "@/context/CartContext";
 
+const getProductThumbnail = (product) => {
+  if (!product) return "";
+  if (product.image) return product.image;
+  if (product.thumbnail) return product.thumbnail;
+  
+  if (product.colorImageMap && typeof product.colorImageMap === "object") {
+    const firstImg = Object.values(product.colorImageMap).find(Boolean);
+    if (firstImg) return firstImg;
+  }
+
+  const combos = product.variation_combo || product.variationCombo || [];
+  if (Array.isArray(combos) && combos.length > 0) {
+    for (const c of combos) {
+      const img = c?.thumbnail || (Array.isArray(c?.images) && c.images[0]) || c?.media_mapping?.thumbnail;
+      if (img) return img;
+    }
+  }
+
+  return "";
+};
+
 const Header = () => {
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -112,7 +133,7 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="w-full font-sans sticky top-0 z-50 shadow-xs bg-white">
+    <header className="w-full font-sans sticky top-0 z-50 shadow-xs bg-white" ref={searchContainerRef}>
       {/* 2. Main Navigation Header */}
       <div className="bg-white border-b border-gray-100 pt-3">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 flex items-center justify-between min-h-[70px] sm:min-h-[85px]">
@@ -166,12 +187,12 @@ const Header = () => {
             </Link>
           </div>
 
-          {/* Right Icons Section with Smooth Expanding Search Bar to Left */}
-          <div className="flex items-center gap-3 sm:gap-5 text-gray-800 z-50 relative" ref={searchContainerRef}>
+          {/* Right Icons Section */}
+          <div className="flex items-center gap-3 sm:gap-5 text-gray-800 z-50 relative">
             
-            {/* Smooth Expanding Search Box (Expanding to Left) */}
+            {/* Smooth Expanding Search Box (Desktop Only: sm screens and above) */}
             <div
-              className={`flex items-center transition-all duration-300 ease-out overflow-hidden ${
+              className={`hidden sm:flex items-center transition-all duration-300 ease-out overflow-hidden ${
                 searchOpen
                   ? "w-48 sm:w-72 opacity-100 mr-0.5"
                   : "w-0 opacity-0 pointer-events-none"
@@ -203,7 +224,7 @@ const Header = () => {
               type="button"
               aria-label="Search"
               onClick={() => {
-                if (searchOpen && searchQuery.trim()) {
+                if (searchOpen && searchQuery.trim() && window.innerWidth >= 640) {
                   handleSearchSubmit();
                 } else {
                   setSearchOpen((prev) => !prev);
@@ -291,9 +312,9 @@ const Header = () => {
               </button>
             )}
 
-            {/* Live Search Results Dropdown Popover */}
+            {/* Desktop Live Search Results Dropdown Popover */}
             {searchOpen && searchQuery.trim().length > 0 && (
-              <div className="absolute right-0 top-full mt-3 w-80 sm:w-96 bg-white rounded-2xl border border-gray-200 shadow-2xl z-[999] p-3.5 max-h-[420px] overflow-y-auto animate-in fade-in duration-150">
+              <div className="hidden sm:block absolute right-0 top-full mt-3 w-96 bg-white rounded-2xl border border-gray-200 shadow-2xl z-[999] p-3.5 max-h-[420px] overflow-y-auto animate-in fade-in duration-150">
                 <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
                   <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                     Matching Products ({searchResults.length})
@@ -319,20 +340,134 @@ const Header = () => {
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    {searchResults.map((product) => (
+                    {searchResults.map((product) => {
+                      const thumb = getProductThumbnail(product);
+                      return (
+                        <Link
+                          key={product.id}
+                          href={`/product/${product.id}`}
+                          onClick={() => setSearchOpen(false)}
+                          className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors group"
+                        >
+                          <div className="w-12 h-12 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden shrink-0 flex items-center justify-center p-0.5">
+                            {thumb ? (
+                              <CustomImg
+                                srcAttr={thumb}
+                                altAttr={product.name}
+                                width={60}
+                                height={60}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <Package className="w-5 h-5 text-gray-300" />
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-semibold text-gray-900 truncate group-hover:text-amber-800 transition-colors">
+                              {product.name}
+                            </h4>
+                            {product.collection_name && (
+                              <div className="pt-0.5">
+                                <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[9px] font-bold text-gray-700 uppercase">
+                                  {product.collection_name}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="text-xs font-bold text-gray-900 shrink-0">
+                            ₹{product.price ? product.price.toLocaleString("en-IN") : "0"}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+          </div>
+
+        </div>
+      </div>
+
+      {/* Mobile Search Bar Dropdown (Absolute Overlay Below Header - Small Screens Only) */}
+      {searchOpen && (
+        <div className="sm:hidden absolute top-full left-0 w-full z-[100] border-b border-gray-200 bg-white/95 backdrop-blur-md px-4 py-2.5 shadow-lg animate-in slide-in-from-top-2 duration-200">
+          <form onSubmit={handleSearchSubmit} className="relative w-full flex items-center">
+            <Search className="absolute left-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search name, collection, SKU..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-xs font-medium text-gray-900 focus:outline-none focus:border-amber-800 shadow-xs placeholder:text-gray-400"
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3.5 p-1 text-gray-400 hover:text-black transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSearchOpen(false)}
+                className="absolute right-3.5 p-1 text-gray-400 hover:text-black transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </form>
+
+          {/* Mobile Matching Search Results Container */}
+          {searchQuery.trim().length > 0 && (
+            <div className="mt-2.5 bg-white rounded-xl border border-gray-200 shadow-xl p-3 max-h-[380px] overflow-y-auto animate-in fade-in duration-150">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  Matching Products ({searchResults.length})
+                </span>
+                <button
+                  onClick={handleSearchSubmit}
+                  className="text-[11px] font-bold text-amber-800 hover:underline cursor-pointer"
+                >
+                  View All &rarr;
+                </button>
+              </div>
+
+              {loadingProducts ? (
+                <div className="py-8 text-center flex flex-col items-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-black" />
+                  <span className="text-xs text-gray-400 font-medium">Searching products...</span>
+                </div>
+              ) : searchResults.length === 0 ? (
+                <div className="py-6 text-center text-gray-500 space-y-1">
+                  <Package className="w-7 h-7 mx-auto text-gray-300" />
+                  <p className="text-xs font-semibold">No matching products found</p>
+                  <p className="text-[11px] text-gray-400">Search by collection, category, name, or SKU</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {searchResults.map((product) => {
+                    const thumb = getProductThumbnail(product);
+                    return (
                       <Link
                         key={product.id}
                         href={`/product/${product.id}`}
                         onClick={() => setSearchOpen(false)}
                         className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors group"
                       >
-                        <div className="w-12 h-12 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden shrink-0 flex items-center justify-center p-1">
-                          {product.image ? (
+                        <div className="w-12 h-12 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden shrink-0 flex items-center justify-center p-0.5">
+                          {thumb ? (
                             <CustomImg
-                              srcAttr={product.image}
+                              srcAttr={thumb}
                               altAttr={product.name}
-                              width={50}
-                              height={50}
+                              width={60}
+                              height={60}
                               className="w-full h-full object-contain"
                             />
                           ) : (
@@ -344,35 +479,27 @@ const Header = () => {
                           <h4 className="text-xs font-semibold text-gray-900 truncate group-hover:text-amber-800 transition-colors">
                             {product.name}
                           </h4>
-                          <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium pt-0.5">
-                            {product.collection_name && (
+                          {product.collection_name && (
+                            <div className="pt-0.5">
                               <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[9px] font-bold text-gray-700 uppercase">
                                 {product.collection_name}
                               </span>
-                            )}
-                            {product.category_name && (
-                              <span className="truncate">{product.category_name}</span>
-                            )}
-                            {product.sku && (
-                              <span className="font-mono text-gray-400">{product.sku}</span>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
 
                         <div className="text-xs font-bold text-gray-900 shrink-0">
                           ₹{product.price ? product.price.toLocaleString("en-IN") : "0"}
                         </div>
                       </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-          </div>
-
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* 3. Sub Navigation Bar (Collections -> Categories -> Subcategories Mega Menu) */}
       <NavigationHeader mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />

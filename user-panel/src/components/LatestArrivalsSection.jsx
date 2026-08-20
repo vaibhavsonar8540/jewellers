@@ -74,9 +74,9 @@ export default function LatestArrivalsSection({
   return (
     <section className={`pb-12 sm:pb-20 px-4 sm:px-8 lg:px-20 mx-auto ${className}`}>
       
-      {/* Header Row with Title & Slider Controls */}
-      <div className="flex flex-wrap items-end justify-between mb-6 sm:mb-10 border-b border-gray-100 pb-4 gap-y-3 gap-x-4">
-        <div className="max-w-xl">
+      {/* Header Row with Title & View All Link */}
+      <div className="flex items-center justify-between mb-6 sm:mb-8 border-b border-gray-100 pb-4 gap-4">
+        <div>
           <h2 className="text-xl sm:text-3xl lg:text-4xl font-canela text-gray-900 font-normal leading-tight">
             {displayTitle}
           </h2>
@@ -87,39 +87,13 @@ export default function LatestArrivalsSection({
           )}
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-          {/* Navigation Arrows */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <button
-              type="button"
-              suppressHydrationWarning
-              onClick={() => scroll("left")}
-              aria-label="Previous products"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-gray-300 bg-white hover:bg-gray-900 hover:text-white hover:border-gray-900 flex items-center justify-center text-gray-700 transition-all duration-200 cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-            <button
-              type="button"
-              suppressHydrationWarning
-              onClick={() => scroll("right")}
-              aria-label="Next products"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-gray-300 bg-white hover:bg-gray-900 hover:text-white hover:border-gray-900 flex items-center justify-center text-gray-700 transition-all duration-200 cursor-pointer"
-            >
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          </div>
-
-          <div className="h-4 w-px bg-gray-200" />
-
-          <Link
-            href={shopUrl}
-            className="text-xs font-bold tracking-widest text-[#202A4E] hover:text-amber-800 uppercase transition-colors inline-flex items-center gap-1"
-          >
-            <span>View All</span>
-            <span className="text-sm">&rarr;</span>
-          </Link>
-        </div>
+        <Link
+          href={shopUrl}
+          className="text-xs sm:text-sm font-bold tracking-widest text-[#202A4E] hover:text-amber-800 uppercase transition-colors inline-flex items-center gap-1.5 shrink-0"
+        >
+          <span>View All</span>
+          <span className="text-sm sm:text-base">&rarr;</span>
+        </Link>
       </div>
 
       {/* Loading Skeleton State */}
@@ -137,20 +111,45 @@ export default function LatestArrivalsSection({
           ))}
         </div>
       ) : products.length > 0 ? (
-        /* Horizontal Product Slider */
-        <div
-          ref={sliderRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 pt-1 scrollbar-none"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="snap-start shrink-0 w-[68vw] xss:w-[240px] sm:w-[280px] lg:w-[300px]"
-            >
-              <ProductCard product={product} />
-            </div>
-          ))}
+        /* Horizontal Product Slider Container with Centered Side Arrows */
+        <div className="relative group">
+          {/* Left Arrow Button (Centered Vertically on Cards) */}
+          <button
+            type="button"
+            suppressHydrationWarning
+            onClick={() => scroll("left")}
+            aria-label="Previous products"
+            className="absolute left-1 sm:-left-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-gray-200 bg-white/95 shadow-md hover:bg-gray-900 hover:text-white hover:border-gray-900 flex items-center justify-center text-gray-700 transition-all duration-200 cursor-pointer"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          {/* Slider */}
+          <div
+            ref={sliderRef}
+            className="flex gap-4 sm:gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 pt-1 scrollbar-none"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {products.map((product) => (
+              <div
+                key={product.id}
+                className="snap-start shrink-0 w-[68vw] xss:w-[240px] sm:w-[280px] lg:w-[300px]"
+              >
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
+
+          {/* Right Arrow Button (Centered Vertically on Cards) */}
+          <button
+            type="button"
+            suppressHydrationWarning
+            onClick={() => scroll("right")}
+            aria-label="Next products"
+            className="absolute right-1 sm:-right-5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-gray-200 bg-white/95 shadow-md hover:bg-gray-900 hover:text-white hover:border-gray-900 flex items-center justify-center text-gray-700 transition-all duration-200 cursor-pointer"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
       ) : (
         /* Empty State */

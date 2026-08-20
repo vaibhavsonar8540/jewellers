@@ -134,7 +134,7 @@ const HeroCarousel = ({
                 <div
                   className={
                     slide.contentClass ||
-                    "absolute w-[85%] sm:w-[50%] md:w-[35%] lg:w-[28%] xl:w-[40%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center sm:left-10 sm:translate-x-0 sm:text-left z-20"
+                    "absolute w-[85%] sm:w-[50%] md:w-[35%] lg:w-[28%] xl:w-[40%] bottom-6 left-1/2 -translate-x-1/2 text-center sm:bottom-auto sm:top-1/2 sm:left-10 sm:translate-x-0 sm:-translate-y-1/2 sm:text-left z-20"
                   }
                 >
                   {slide.title && (

@@ -3,10 +3,12 @@
 import React, { useEffect, useState } from "react";
 import { X, ShoppingBag, Plus, Minus, Trash2, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import CustomImg from "@/components/CustomImg";
 import { useCart } from "@/context/CartContext";
 
 export default function CartDrawer() {
+  const router = useRouter();
   const {
     cartItems,
     isCartOpen,
@@ -21,6 +23,17 @@ export default function CartDrawer() {
   } = useCart();
 
   const [termsAgreed, setTermsAgreed] = useState(true);
+  const [loginWarning, setLoginWarning] = useState(false);
+
+  const handleCheckoutClick = (e) => {
+    if (!user) {
+      e.preventDefault();
+      setLoginWarning(true);
+    } else {
+      closeCart();
+      router.push("/checkout");
+    }
+  };
 
   // Lock body scroll when drawer is open
   useEffect(() => {
@@ -236,13 +249,13 @@ export default function CartDrawer() {
 
             {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-3 pt-2">
-              <Link
-                href={user ? "/checkout" : "/login?redirect=/checkout"}
-                onClick={closeCart}
+              <button
+                type="button"
+                onClick={handleCheckoutClick}
                 className="w-full border border-[#202A4E] text-[#202A4E] hover:bg-[#202A4E] hover:text-white py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors cursor-pointer rounded-none text-center flex items-center justify-center"
               >
                 CHECKOUT
-              </Link>
+              </button>
 
               <Link
                 href="/cart"
@@ -252,6 +265,23 @@ export default function CartDrawer() {
                 VIEW YOUR BAG
               </Link>
             </div>
+
+            {/* Login Warning Alert Below Buttons */}
+            {loginWarning && (
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in">
+                <div className="flex items-center gap-1.5">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>For checkout, you need to login first.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLoginWarning(false)}
+                  className="text-amber-700 hover:text-amber-950 underline text-[11px] shrink-0 cursor-pointer font-bold"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

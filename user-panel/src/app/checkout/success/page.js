@@ -74,16 +74,16 @@ function OrderSuccessContent() {
           </div>
 
           {/* Order Reference Box */}
-          <div className="bg-slate-50 border border-slate-200 p-4 sm:p-6 rounded-none flex flex-col sm:flex-row items-center justify-between gap-4 max-w-xl mx-auto text-left font-mono">
-            <div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider">Order Number</div>
-              <div className="text-lg sm:text-xl font-bold text-slate-900">
+          <div className="bg-slate-50 border border-slate-200 p-4 sm:p-6 rounded-none flex flex-col sm:flex-row items-center justify-between gap-4 max-w-xl mx-auto text-center sm:text-left font-mono">
+            <div className="w-full sm:w-auto flex flex-col items-center sm:items-start">
+              <div className="text-[11px] sm:text-xs text-slate-500 uppercase tracking-wider">Order Number</div>
+              <div className="text-base sm:text-xl font-bold text-slate-900 break-all sm:break-normal">
                 {order?.order_number || orderNumberParam || "ORD-PROCESSING"}
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-xs text-slate-500 uppercase tracking-wider">Payment Status</div>
-              <span className="inline-block px-3 py-1 bg-emerald-600 text-white font-bold text-xs rounded-full uppercase tracking-wider">
+            <div className="w-full sm:w-auto flex flex-col items-center sm:items-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-200">
+              <div className="text-[11px] sm:text-xs text-slate-500 uppercase tracking-wider mb-1">Payment Status</div>
+              <span className="inline-block px-3.5 py-1 bg-emerald-600 text-white font-bold text-xs rounded-full uppercase tracking-wider">
                 {order?.payment_status || "Paid"}
               </span>
             </div>

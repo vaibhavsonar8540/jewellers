@@ -56,11 +56,11 @@ const Footer = () => {
 
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 relative z-10">
         
-        {/* Footer Navigation Columns Grid (4 Columns) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 md:gap-12 max-w-6xl mx-auto mb-14 text-center sm:text-left">
+        {/* Footer Navigation Columns Grid (2 Columns on small screens, 4 on desktop) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10 md:gap-12 max-w-6xl mx-auto mb-14 text-left">
           
           {/* Column 1: Brand Logo & Social Links */}
-          <div className="space-y-5 flex flex-col items-center sm:items-start justify-between">
+          <div className="space-y-5 flex flex-col items-start justify-between">
             <Link href="/" className="inline-block transition-opacity hover:opacity-90">
               <CustomImg
                 srcAttr="/logo.webp"
@@ -68,7 +68,7 @@ const Footer = () => {
                 titleAttr="Website Logo"
                 width={220}
                 height={80}
-                className="h-14 sm:h-16 md:h-18 w-auto object-contain brightness-0 invert"
+                className="h-12 sm:h-16 md:h-18 w-auto object-contain brightness-0 invert"
               />
             </Link>
             
@@ -76,7 +76,7 @@ const Footer = () => {
               <h4 className="text-xs font-semibold tracking-wider text-gray-300 uppercase">
                 Follow Us
               </h4>
-              <div className="flex items-center gap-3 text-gray-300 justify-center sm:justify-start">
+              <div className="flex items-center gap-3 text-gray-300 justify-start">
                 <a
                   href="https://instagram.com"
                   target="_blank"
@@ -207,9 +207,9 @@ const Footer = () => {
         </div>
 
         {/* Bottom Copyright & Secondary Links Bar */}
-        <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400 max-w-6xl mx-auto">
-          <p>© {new Date().getFullYear()} Luxura.com. All rights reserved.</p>
-          <div className="flex items-center gap-6 text-gray-300 text-xs">
+        <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400 max-w-6xl mx-auto text-center sm:text-left">
+          <p className="w-full sm:w-auto text-center sm:text-left">© {new Date().getFullYear()} Luxura.com. All rights reserved.</p>
+          <div className="hidden sm:flex items-center gap-6 text-gray-300 text-xs">
             <Link href="/terms-and-conditions" className="hover:text-white transition-colors">
               Terms & Conditions
             </Link>

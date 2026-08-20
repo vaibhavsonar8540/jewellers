@@ -137,7 +137,7 @@ export default function CheckoutPage() {
     }
 
     if (!user) {
-      router.push("/login?redirect=/checkout");
+      setFormError("For checkout, you need to login first.");
       return;
     }
 

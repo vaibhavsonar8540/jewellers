@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, ArrowLeft, Loader2, Check, Plus, Minus, Package, Play } from "lucide-react";
+import { ChevronRight, ArrowLeft, Loader2, Check, Plus, Minus, Package, Play, ChevronLeft } from "lucide-react";
 import CustomImg from "@/components/CustomImg";
 import { useCart } from "@/context/CartContext";
 import { useDispatch, useSelector } from "react-redux";
@@ -90,6 +90,7 @@ export default function ProductDetailPage({ params }) {
   // Accordion Toggle States
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(true);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
 
   useEffect(() => {
     Promise.resolve(params).then((resolved) => {
@@ -127,35 +128,7 @@ export default function ProductDetailPage({ params }) {
     setTimeout(() => setAddedToBag(false), 2500);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-3 p-12">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-800" />
-        <p className="text-xs font-semibold text-gray-500 tracking-wide uppercase">
-          Loading product details...
-        </p>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4 p-12 text-center">
-        <h2 className="text-2xl font-canela font-normal text-gray-900">Product Not Found</h2>
-        <p className="text-sm text-gray-500">
-          The product you are looking for does not exist or has been removed.
-        </p>
-        <Link
-          href="/shop"
-          className="px-6 py-3 bg-[#202A4E] text-white text-xs font-semibold uppercase tracking-widest inline-flex items-center gap-2 hover:bg-black transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Shop
-        </Link>
-      </div>
-    );
-  }
-
-  // Fallback options for display
+  // Fallback options for display (computed before hooks)
   const puritiesToDisplay =
     productPurities && productPurities.length > 0
       ? productPurities
@@ -202,6 +175,60 @@ export default function ProductDetailPage({ params }) {
       : product?.diamond_shape
       ? [{ id: product.diamond_shape_id || "1", name: product.diamond_shape }]
       : [];
+
+  // Auto-select first item defaults for variant options (all hooks MUST run before early returns)
+  useEffect(() => {
+    if (!selectedPurity && puritiesToDisplay.length > 0) {
+      dispatch(setSelectedPurity(puritiesToDisplay[0]));
+    }
+  }, [selectedPurity, puritiesToDisplay, dispatch]);
+
+  useEffect(() => {
+    if (!selectedColor && colorsToDisplay.length > 0) {
+      dispatch(setSelectedColor(colorsToDisplay[0]));
+    }
+  }, [selectedColor, colorsToDisplay, dispatch]);
+
+  useEffect(() => {
+    if (!selectedDiamondShape && diamondShapesToDisplay.length > 0) {
+      dispatch(setSelectedDiamondShape(diamondShapesToDisplay[0]));
+    }
+  }, [selectedDiamondShape, diamondShapesToDisplay, dispatch]);
+
+  useEffect(() => {
+    if (!selectedRingSize && ringSizesList.length > 0) {
+      const firstVal = ringSizesList[0].name || ringSizesList[0].size_in_mm || ringSizesList[0];
+      dispatch(setSelectedRingSize(firstVal));
+    }
+  }, [selectedRingSize, ringSizesList, dispatch]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-3 p-12">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-800" />
+        <p className="text-xs font-semibold text-gray-500 tracking-wide uppercase">
+          Loading product details...
+        </p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4 p-12 text-center">
+        <h2 className="text-2xl font-canela font-normal text-gray-900">Product Not Found</h2>
+        <p className="text-sm text-gray-500">
+          The product you are looking for does not exist or has been removed.
+        </p>
+        <Link
+          href="/shop"
+          className="px-6 py-3 bg-[#202A4E] text-white text-xs font-semibold uppercase tracking-widest inline-flex items-center gap-2 hover:bg-black transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Shop
+        </Link>
+      </div>
+    );
+  }
 
   // Collect all images and video for display
   let displayImages = [];
@@ -290,6 +317,12 @@ export default function ProductDetailPage({ params }) {
     videoUrl = product.video;
   }
 
+  // Combined media items array for slider
+  const allMediaItems = [
+    ...displayImages.map((img, i) => ({ type: "image", url: img, id: `img-${i}` })),
+    ...(videoUrl ? [{ type: "video", url: videoUrl, id: "video-0" }] : []),
+  ];
+
   // Detail Rows
   const itemDetailRows = [
     displaySku ? { label: "SKU:", value: displaySku } : null,
@@ -338,67 +371,161 @@ export default function ProductDetailPage({ params }) {
       <div className="max-w-[1300px] mx-auto px-4 sm:px-8 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           
-          {/* Left Column: Compact, Slightly Smaller Product Gallery */}
+          {/* Left Column: Product Gallery */}
           <div className="lg:col-span-6 max-w-xl mx-auto lg:mx-0 w-full space-y-3.5">
             
-            {/* 1. Primary Main Thumbnail (Slightly Smaller Big Card) */}
-            <div className="w-full bg-white aspect-[4/3] sm:aspect-square max-h-[420px] border border-gray-200/80 rounded-xl p-3 sm:p-6 flex items-center justify-center overflow-hidden shadow-2xs mx-auto">
-              {displayImages[0] ? (
-                <CustomImg
-                  srcAttr={displayImages[0]}
-                  altAttr={product.name}
-                  width={700}
-                  height={700}
-                  className="w-full h-full object-contain"
-                  priority
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center text-gray-400 space-y-2">
-                  <Package className="w-10 h-10 stroke-[1.5]" />
-                  <span className="text-xs font-semibold uppercase tracking-wider">No Image Available</span>
+            {/* Desktop View: Grid Layout (lg screens and above ONLY - unchanged) */}
+            <div className="hidden lg:block space-y-3.5">
+              {/* 1. Primary Main Thumbnail */}
+              <div className="w-full bg-white aspect-[4/3] sm:aspect-square max-h-[420px] border border-gray-200/80 rounded-xl p-3 sm:p-6 flex items-center justify-center overflow-hidden shadow-2xs mx-auto">
+                {displayImages[0] ? (
+                  <CustomImg
+                    srcAttr={displayImages[0]}
+                    altAttr={product.name}
+                    width={700}
+                    height={700}
+                    className="w-full h-full object-contain"
+                    priority
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-gray-400 space-y-2">
+                    <Package className="w-10 h-10 stroke-[1.5]" />
+                    <span className="text-xs font-semibold uppercase tracking-wider">No Image Available</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Sub-images & Video Grid */}
+              {(displayImages.length > 1 || videoUrl) && (
+                <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
+                  {/* Remaining Sub-images */}
+                  {displayImages.slice(1).map((imgUrl, idx) => (
+                    <div
+                      key={idx}
+                      className="w-full bg-white aspect-square max-h-[210px] flex items-center justify-center p-2.5 sm:p-3 border border-gray-200/80 rounded-xl overflow-hidden shadow-2xs"
+                    >
+                      <CustomImg
+                        srcAttr={imgUrl}
+                        altAttr={`${product.name} view ${idx + 2}`}
+                        width={400}
+                        height={400}
+                        className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  ))}
+
+                  {/* Uploaded Video Card in Grid */}
+                  {videoUrl && (
+                    <div className="w-full bg-black aspect-square max-h-[210px] flex items-center justify-center border border-gray-900 rounded-xl overflow-hidden relative shadow-2xs">
+                      <div className="absolute top-2 left-2 z-10 bg-black/70 backdrop-blur-xs text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md flex items-center gap-1 border border-white/20">
+                        <Play className="w-2.5 h-2.5 fill-white text-white" />
+                        <span>Video</span>
+                      </div>
+                      <video
+                        src={videoUrl}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        controls
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* 2. Sub-images & Video Grid (Slightly Smaller Two-by-Two Grid) */}
-            {(displayImages.length > 1 || videoUrl) && (
-              <div className="grid grid-cols-2 gap-3 sm:gap-3.5">
-                {/* Remaining Sub-images */}
-                {displayImages.slice(1).map((imgUrl, idx) => (
-                  <div
-                    key={idx}
-                    className="w-full bg-white aspect-square max-h-[210px] flex items-center justify-center p-2.5 sm:p-3 border border-gray-200/80 rounded-xl overflow-hidden shadow-2xs"
-                  >
-                    <CustomImg
-                      srcAttr={imgUrl}
-                      altAttr={`${product.name} view ${idx + 2}`}
-                      width={400}
-                      height={400}
-                      className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                ))}
-
-                {/* Uploaded Video Card in Grid */}
-                {videoUrl && (
-                  <div className="w-full bg-black aspect-square max-h-[210px] flex items-center justify-center border border-gray-900 rounded-xl overflow-hidden relative shadow-2xs">
-                    <div className="absolute top-2 left-2 z-10 bg-black/70 backdrop-blur-xs text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md flex items-center gap-1 border border-white/20">
-                      <Play className="w-2.5 h-2.5 fill-white text-white" />
-                      <span>Video</span>
+            {/* Mobile / Tablet View: Interactive Media Slider (< lg screens) */}
+            <div className="block lg:hidden w-full space-y-3">
+              <div className="relative w-full aspect-square bg-white border border-gray-200/80 rounded-xl p-4 flex items-center justify-center overflow-hidden shadow-2xs">
+                {allMediaItems.length > 0 ? (
+                  allMediaItems[activeMediaIndex]?.type === "video" ? (
+                    <div className="w-full h-full relative flex items-center justify-center bg-black rounded-lg overflow-hidden">
+                      <div className="absolute top-2 left-2 z-10 bg-black/70 backdrop-blur-xs text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md flex items-center gap-1 border border-white/20">
+                        <Play className="w-2.5 h-2.5 fill-white text-white" />
+                        <span>Video</span>
+                      </div>
+                      <video
+                        src={allMediaItems[activeMediaIndex].url}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        controls
+                        className="w-full h-full object-contain"
+                      />
                     </div>
-                    <video
-                      src={videoUrl}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      controls
+                  ) : (
+                    <CustomImg
+                      srcAttr={allMediaItems[activeMediaIndex]?.url || displayImages[0]}
+                      altAttr={product.name}
+                      width={600}
+                      height={600}
                       className="w-full h-full object-contain"
+                      priority
                     />
+                  )
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-gray-400 space-y-2">
+                    <Package className="w-10 h-10 stroke-[1.5]" />
+                    <span className="text-xs font-semibold uppercase tracking-wider">No Image Available</span>
                   </div>
                 )}
+
+                {/* Prev / Next Slider Navigation Arrows */}
+                {allMediaItems.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setActiveMediaIndex((prev) => (prev > 0 ? prev - 1 : allMediaItems.length - 1))}
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md border border-gray-200 flex items-center justify-center text-gray-800 hover:bg-black hover:text-white transition-colors cursor-pointer z-10"
+                      aria-label="Previous media item"
+                    >
+                      <ChevronLeft className="w-5 h-5 stroke-[2]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveMediaIndex((prev) => (prev < allMediaItems.length - 1 ? prev + 1 : 0))}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md border border-gray-200 flex items-center justify-center text-gray-800 hover:bg-black hover:text-white transition-colors cursor-pointer z-10"
+                      aria-label="Next media item"
+                    >
+                      <ChevronRight className="w-5 h-5 stroke-[2]" />
+                    </button>
+                  </>
+                )}
               </div>
-            )}
+
+              {/* Horizontal Scrollable Thumbnails Selector for Mobile/Tablet Slider */}
+              {allMediaItems.length > 1 && (
+                <div className="flex items-center justify-center gap-2.5 overflow-x-auto py-1 px-1">
+                  {allMediaItems.map((item, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActiveMediaIndex(idx)}
+                      className={`w-14 h-14 rounded-lg border-2 overflow-hidden bg-white shrink-0 p-1 transition-all cursor-pointer relative ${
+                        activeMediaIndex === idx ? "border-[#202A4E] shadow-sm scale-105" : "border-gray-200 opacity-70 hover:opacity-100"
+                      }`}
+                    >
+                      {item.type === "video" ? (
+                        <div className="w-full h-full bg-black rounded flex items-center justify-center relative">
+                          <Play className="w-4 h-4 text-white fill-white" />
+                        </div>
+                      ) : (
+                        <CustomImg
+                          srcAttr={item.url}
+                          altAttr={`Thumbnail ${idx + 1}`}
+                          width={100}
+                          height={100}
+                          className="w-full h-full object-contain"
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
           </div>
 
@@ -447,10 +574,12 @@ export default function ProductDetailPage({ params }) {
                 <div className="flex items-center gap-3 flex-wrap">
                   {puritiesToDisplay.map((purity) => {
                     const purityVal = purity.carat || purity.name || purity;
+                    const activePurity = selectedPurity || puritiesToDisplay[0];
                     const isSelected =
-                      selectedPurity?.id === purity.id ||
-                      selectedPurity?.carat === purityVal ||
-                      selectedPurity?.name === purityVal;
+                      activePurity?.id === purity.id ||
+                      activePurity?.carat === purityVal ||
+                      activePurity?.name === purityVal ||
+                      activePurity === purityVal;
                     return (
                       <button
                         key={purity.id || purityVal}
@@ -476,9 +605,10 @@ export default function ProductDetailPage({ params }) {
                 <label className="block text-sm font-semibold text-gray-900">Gold Color:</label>
                 <div className="flex items-center gap-3 flex-wrap">
                   {colorsToDisplay.map((col) => {
+                    const activeColor = selectedColor || colorsToDisplay[0];
                     const isSelected =
-                      selectedColor?.id === col.id ||
-                      selectedColor?.name === col.name;
+                      activeColor?.id === col.id ||
+                      activeColor?.name === col.name;
                     return (
                       <button
                         key={col.id || col.name}
@@ -508,9 +638,10 @@ export default function ProductDetailPage({ params }) {
                 <label className="block text-sm font-semibold text-gray-900">Diamond Shape:</label>
                 <div className="flex items-center gap-3 flex-wrap">
                   {diamondShapesToDisplay.map((shape) => {
+                    const activeShape = selectedDiamondShape || diamondShapesToDisplay[0];
                     const isSelected =
-                      selectedDiamondShape?.id === shape.id ||
-                      selectedDiamondShape?.name === shape.name;
+                      activeShape?.id === shape.id ||
+                      activeShape?.name === shape.name;
                     return (
                       <button
                         key={shape.id || shape.name}

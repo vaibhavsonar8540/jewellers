@@ -146,7 +146,7 @@ export default function DiamondShapeSlider({ autoPlay = true, autoPlayInterval =
             
             {/* Shapes Graphic Carousel Container */}
             <div 
-              className="relative w-full h-44 sm:h-72 flex items-center justify-center overflow-visible"
+              className="relative w-full h-36 sm:h-72 flex items-center justify-center overflow-visible"
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -171,12 +171,12 @@ export default function DiamondShapeSlider({ autoPlay = true, autoPlayInterval =
                   blurStyle = "blur-none";
                   zIndex = 20;
                 } else if (isLeft) {
-                  transformStyle = "-translate-x-28 sm:-translate-x-48 lg:-translate-x-56 scale-70 sm:scale-75";
+                  transformStyle = "-translate-x-24 sm:-translate-x-48 lg:-translate-x-56 scale-75";
                   opacityStyle = "opacity-40 hover:opacity-75";
                   blurStyle = "blur-[2px]";
                   zIndex = 10;
                 } else if (isRight) {
-                  transformStyle = "translate-x-28 sm:translate-x-48 lg:translate-x-56 scale-70 sm:scale-75";
+                  transformStyle = "translate-x-24 sm:translate-x-48 lg:translate-x-56 scale-75";
                   opacityStyle = "opacity-40 hover:opacity-75";
                   blurStyle = "blur-[2px]";
                   zIndex = 10;
@@ -193,12 +193,12 @@ export default function DiamondShapeSlider({ autoPlay = true, autoPlayInterval =
                     style={{ zIndex }}
                   >
                     <div className="block relative group">
-                      <div className={`relative ${isCenter ? 'w-36 h-36 sm:w-56 sm:h-56 lg:w-60 lg:h-60' : 'w-24 h-24 sm:w-44 sm:h-44'} transition-all duration-500 drop-shadow-xl`}>
+                      <div className={`relative ${isCenter ? 'w-24 h-24 sm:w-56 sm:h-56 lg:w-60 lg:h-60' : 'w-16 h-16 sm:w-44 sm:h-44'} transition-all duration-500 drop-shadow-xl`}>
                         <Image
                           src={shape.image}
                           alt={shape.name}
                           fill
-                          sizes="(max-width: 640px) 150px, (max-width: 1024px) 220px, 240px"
+                          sizes="(max-width: 640px) 100px, (max-width: 1024px) 220px, 240px"
                           className="object-cover filter drop-shadow-[0_10px_15px_rgba(0,0,0,0.12)] transition-transform duration-300 group-hover:scale-105"
                           priority={isCenter}
                         />

@@ -51,7 +51,7 @@ export default function Home() {
       </section>
 
       {/* Custom Ring Craftsmanship Section */}
-      <section className="px-6 sm:px-12 lg:px-20 mx-auto">
+      <section className="px-6 sm:px-12 lg:px-20 mx-auto my-8 sm:my-16 lg:my-0">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           
           {/* Left Side: Text & Appointment CTA */}
@@ -106,7 +106,7 @@ export default function Home() {
             New Arrivals
           </h2>
           <p className="text-sm sm:text-base text-gray-200 font-light drop-shadow">
-            Discover our latest handcrafted masterpieces, designed to capture light and leave an everlasting impression.
+            Discover our latest handcrafted masterpieces.
           </p>
           <div className="pt-4">
             <Link

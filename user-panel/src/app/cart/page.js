@@ -52,6 +52,7 @@ export default function CartPage() {
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [termsAgreed, setTermsAgreed] = useState(true);
+  const [loginWarning, setLoginWarning] = useState(false);
 
   const handleApplyPromo = (e) => {
     e.preventDefault();
@@ -66,7 +67,7 @@ export default function CartPage() {
 
   const handleProceedToCheckout = () => {
     if (!user) {
-      router.push("/login?redirect=/checkout");
+      setLoginWarning(true);
       return;
     }
 
@@ -354,6 +355,22 @@ export default function CartPage() {
                       <CreditCard className="w-4 h-4" />
                       PROCEED TO CHECKOUT
                     </button>
+
+                    {loginWarning && (
+                      <div className="mt-3 p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-between gap-3 animate-in fade-in">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span>For checkout, you need to login first.</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setLoginWarning(false)}
+                          className="text-amber-700 hover:text-amber-950 underline text-xs font-bold shrink-0 cursor-pointer"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
