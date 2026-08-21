@@ -228,33 +228,33 @@ export default function ProfilePage() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-2">
         {/* Luxury Profile Header Banner */}
-        <div className="bg-gradient-to-r from-[#1A2238] via-[#202A4E] to-[#1A2238] text-white p-8 sm:p-10 mb-8 shadow-xl relative overflow-hidden">
+        <div className="bg-gradient-to-r from-[#1A2238] via-[#202A4E] to-[#1A2238] text-white p-4 sm:p-10 mb-6 sm:mb-8 shadow-xl relative overflow-hidden">
           <div className="absolute right-0 top-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            <div className="flex items-center gap-5">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 border-2 border-amber-400/40 flex items-center justify-center text-amber-300 text-2xl font-serif font-bold uppercase shadow-inner shrink-0">
+          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+            <div className="flex items-center gap-3.5 sm:gap-5">
+              <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full bg-white/10 border-2 border-amber-400/40 flex items-center justify-center text-amber-300 text-lg sm:text-2xl font-serif font-bold uppercase shadow-inner shrink-0">
                 {formData.fullName ? formData.fullName.charAt(0) : "U"}
               </div>
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-400/10 border border-amber-400/30 text-amber-300 text-[10px] font-mono uppercase tracking-widest rounded-full">
-                  <ShieldCheck className="w-3 h-3 text-amber-400" />
+              <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-2.5 bg-amber-400/10 border border-amber-400/30 text-amber-300 text-[9px] sm:text-[10px] font-mono uppercase tracking-wider rounded-full">
+                  <ShieldCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400" />
                   <span>Verified Customer</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-serif font-normal text-white">
+                <h1 className="text-xl sm:text-3xl font-serif font-normal text-white truncate">
                   {formData.fullName || "User Profile"}
                 </h1>
-                <p className="text-xs text-slate-300 font-mono truncate max-w-sm">
+                <p className="text-[11px] sm:text-xs text-slate-300 font-mono truncate max-w-[200px] sm:max-w-sm">
                   {user.email}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-3 shrink-0 pt-2 sm:pt-0 border-t border-white/10 sm:border-t-0 w-full sm:w-auto justify-end">
               <Link
                 href="/orders"
-                className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold uppercase tracking-wider transition cursor-pointer flex items-center gap-2"
+                className="px-3.5 py-2 sm:px-4 sm:py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-[11px] sm:text-xs font-bold uppercase tracking-wider transition cursor-pointer flex items-center gap-2"
               >
-                <Package className="w-4 h-4 text-amber-300" />
+                <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
                 <span>My Orders</span>
               </Link>
             </div>

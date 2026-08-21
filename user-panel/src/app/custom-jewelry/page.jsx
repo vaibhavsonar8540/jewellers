@@ -95,16 +95,16 @@ export default function CustomJewelryPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-2 w-full sm:w-auto">
+        <div className="flex flex-row items-center justify-center gap-2 sm:gap-4 pt-2 w-full max-w-md mx-auto sm:w-auto">
           <Link
             href="/appointment"
-            className="w-full sm:w-auto px-8 py-3.5 bg-[#202A4E] hover:bg-[#151b33] text-white text-xs sm:text-sm font-semibold uppercase tracking-wider transition-colors shadow-xs text-center"
+            className="flex-1 sm:flex-none px-3 sm:px-8 py-3.5 bg-[#202A4E] hover:bg-[#151b33] text-white text-[11px] sm:text-sm font-semibold uppercase tracking-wider transition-colors shadow-xs text-center whitespace-nowrap"
           >
             Book Appointment
           </Link>
           <Link
             href="/contact"
-            className="w-full sm:w-auto px-8 py-3.5 bg-[#202A4E] hover:bg-[#151b33] text-white text-xs sm:text-sm font-semibold uppercase tracking-wider transition-colors shadow-xs text-center"
+            className="flex-1 sm:flex-none px-3 sm:px-8 py-3.5 bg-[#202A4E] hover:bg-[#151b33] text-white text-[11px] sm:text-sm font-semibold uppercase tracking-wider transition-colors shadow-xs text-center whitespace-nowrap"
           >
             Contact Us
           </Link>

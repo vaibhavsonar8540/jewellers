@@ -124,6 +124,52 @@ const getPaymentBadge = (status) => {
   }
 };
 
+const parseOrderItems = (order) => {
+  if (!order) return [];
+  let raw =
+    order.items ||
+    order.order_items ||
+    order.cart_items ||
+    order.items_json ||
+    order.order_details ||
+    order.products ||
+    [];
+
+  if (typeof raw === "string") {
+    try {
+      raw = JSON.parse(raw);
+    } catch (e) {
+      console.warn("Could not parse order items JSON:", e);
+      return [];
+    }
+  }
+
+  if (!Array.isArray(raw)) return [];
+
+  return raw.map((item) => {
+    const variation = item.variation || item.variation_combo || {};
+    return {
+      ...item,
+      product_name:
+        item.product_name ||
+        item.name ||
+        item.title ||
+        item.product?.name ||
+        "Jewelry Product",
+      thumbnail:
+        item.thumbnail ||
+        item.image ||
+        (Array.isArray(item.images) ? item.images[0] : "") ||
+        item.product?.image ||
+        item.product?.thumbnail ||
+        "",
+      quantity: parseInt(item.quantity || item.qty || 1, 10),
+      price: parseFloat(item.price || item.unit_price || 0),
+      variation,
+    };
+  });
+};
+
 export default function OrdersPage() {
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -260,7 +306,8 @@ export default function OrdersPage() {
         const query = searchQuery.toLowerCase().trim();
         const numMatch = order.order_number?.toLowerCase().includes(query);
         const rzpOrderMatch = order.razorpay_order_id?.toLowerCase().includes(query);
-        const itemMatch = order.items?.some((item) =>
+        const parsedItems = parseOrderItems(order);
+        const itemMatch = parsedItems.some((item) =>
           item.product_name?.toLowerCase().includes(query)
         );
         const nameMatch = order.shipping_address?.full_name?.toLowerCase().includes(query);
@@ -287,23 +334,35 @@ export default function OrdersPage() {
       {/* Main Container */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-16 pt-2">
         {/* Luxury Header Banner */}
-        <div className="bg-gradient-to-r from-[#1A2238] via-[#202A4E] to-[#1A2238] text-white p-8 sm:p-10 mb-8 shadow-xl relative overflow-hidden">
+        <div className="bg-gradient-to-r from-[#1A2238] via-[#202A4E] to-[#1A2238] text-white p-4 sm:p-10 mb-6 sm:mb-8 shadow-xl relative overflow-hidden">
           <div className="absolute right-0 top-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-mono uppercase tracking-widest rounded-full">
-                <Package className="w-3.5 h-3.5 text-amber-400" />
-                <span>Order History & Razorpay Receipts</span>
+          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+            <div className="space-y-1.5 sm:space-y-2 w-full sm:w-auto">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 bg-amber-400/10 border border-amber-400/30 text-amber-300 text-[10px] sm:text-xs font-mono uppercase tracking-wider rounded-full">
+                <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
+                <span>Order History</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-normal tracking-tight text-white">
-                Orders Dashboard
-              </h1>
-              <p className="text-sm text-slate-300 font-sans max-w-xl">
+              <div className="flex items-center justify-between gap-3">
+                <h1 className="text-2xl sm:text-4xl lg:text-5xl font-serif font-normal tracking-tight text-white">
+                  Orders Dashboard
+                </h1>
+                {/* Mobile Icon-only Refresh button in line with title */}
+                <button
+                  onClick={handleRefresh}
+                  className="sm:hidden p-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white transition cursor-pointer rounded-full shrink-0"
+                  aria-label="Refresh Orders"
+                  title="Refresh Orders"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                </button>
+              </div>
+              <p className="hidden sm:block text-sm text-slate-300 font-sans max-w-xl">
                 Track order status, manage delivery details, view Razorpay payment IDs, and update order lifecycles.
               </p>
             </div>
 
-            <div className="flex flex-col items-end gap-3 shrink-0">
+            {/* Desktop Refresh Button */}
+            <div className="hidden sm:block shrink-0">
               <button
                 onClick={handleRefresh}
                 className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold uppercase tracking-wider transition cursor-pointer flex items-center gap-2"
@@ -311,18 +370,6 @@ export default function OrdersPage() {
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
                 <span>Refresh Orders</span>
               </button>
-
-              {isAuthenticated && (
-                <div className="bg-white/10 backdrop-blur-md border border-white/15 px-4 py-2 text-right shrink-0">
-                  <div className="text-[10px] text-slate-300 font-mono">Logged in as</div>
-                  <div className="text-xs font-semibold text-white truncate max-w-[200px]">
-                    {user?.email}
-                  </div>
-                  <div className="text-xs text-amber-300 font-semibold mt-0.5">
-                    Total Orders: {orders.length}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -422,15 +469,15 @@ export default function OrdersPage() {
                 {[
                   {
                     id: "purchased",
-                    label: `Purchased Orders (${orders.filter((o) => o.payment_status?.toLowerCase() === "paid" || ["Confirmed", "Processing", "Shipped", "Delivered"].includes(o.order_status)).length})`,
+                    label: `Purchased (${orders.filter((o) => o.payment_status?.toLowerCase() === "paid" || ["Confirmed", "Processing", "Shipped", "Delivered"].includes(o.order_status)).length})`,
                   },
                   {
                     id: "all",
-                    label: `All History (${orders.length})`,
+                    label: `All (${orders.length})`,
                   },
                   {
                     id: "pending",
-                    label: `Unpaid Drafts (${orders.filter((o) => o.payment_status?.toLowerCase() !== "paid" && ["Pending"].includes(o.order_status)).length})`,
+                    label: `Unpaid (${orders.filter((o) => o.payment_status?.toLowerCase() !== "paid" && ["Pending"].includes(o.order_status)).length})`,
                   },
                   {
                     id: "completed",
@@ -438,7 +485,7 @@ export default function OrdersPage() {
                   },
                   {
                     id: "cancelled_returns",
-                    label: `Cancelled & Returns (${orders.filter((o) => ["Cancelled", "Return Requested", "Returned"].includes(o.order_status)).length})`,
+                    label: `Cancelled (${orders.filter((o) => ["Cancelled", "Return Requested", "Returned"].includes(o.order_status)).length})`,
                   },
                 ].map((tab) => (
                   <button
@@ -610,9 +657,17 @@ export default function OrdersPage() {
 
                       {/* Card Body: Items Snapshot */}
                       <div className="p-6 divide-y divide-slate-100">
-                        {order.items &&
-                          order.items.map((item, idx) => {
-                            const variation = item.variation || item;
+                        {(() => {
+                          const orderItems = parseOrderItems(order);
+                          if (orderItems.length === 0) {
+                            return (
+                              <div className="py-2 text-xs text-slate-500 font-sans italic">
+                                No purchased items metadata found for this order.
+                              </div>
+                            );
+                          }
+                          return orderItems.map((item, idx) => {
+                            const variation = item.variation || {};
                             const variantSpecs = [
                               variation.color ? `Color: ${variation.color}` : null,
                               variation.purity ? `Purity: ${variation.purity}` : null,
@@ -657,23 +712,24 @@ export default function OrdersPage() {
                                 {/* Price */}
                                 <div className="text-right shrink-0">
                                   <div className="text-sm font-semibold text-slate-900 font-sans">
-                                    ₹{(parseFloat(item.price) * item.quantity).toLocaleString("en-IN")}
+                                    ₹{(item.price * item.quantity).toLocaleString("en-IN")}
                                   </div>
                                   <div className="text-[11px] text-slate-400 font-mono">
-                                    ₹{parseFloat(item.price).toLocaleString("en-IN")} each
+                                    ₹{item.price.toLocaleString("en-IN")} each
                                   </div>
                                 </div>
                               </div>
                             );
-                          })}
+                          });
+                        })()}
                       </div>
 
                       {/* Card Footer: Summary & Action Buttons */}
                       <div className="bg-slate-50/50 border-t border-slate-200/80 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         {/* Total Amount & Razorpay IDs preview */}
                         <div className="space-y-0.5">
-                          <div className="text-xs text-slate-500 font-sans">Total Amount</div>
-                          <div className="text-xl font-bold text-slate-900 font-sans flex items-center gap-2">
+                          <div className="text-xs text-black font-semibold font-sans">Total Amount</div>
+                          <div className="text-xl font-semibold text-black font-sans flex items-center gap-2">
                             <span>₹{parseFloat(order.total_amount || 0).toLocaleString("en-IN")}</span>
                           </div>
                           {order.razorpay_order_id && (
@@ -920,41 +976,68 @@ export default function OrdersPage() {
               </div>
 
               {/* Items List */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
-                  <Package className="w-4 h-4 text-amber-600" />
-                  Purchased Items ({activeDetailOrder.items?.length || 0})
-                </h4>
+              {(() => {
+                const orderItems = parseOrderItems(activeDetailOrder);
+                return (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                      <Package className="w-4 h-4 text-amber-600" />
+                      Purchased Items ({orderItems.length})
+                    </h4>
 
-                <div className="border border-slate-200 divide-y divide-slate-100">
-                  {activeDetailOrder.items?.map((item, i) => (
-                    <div key={i} className="p-4 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-slate-50 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center p-1">
-                          <CustomImg
-                            srcAttr={item.thumbnail}
-                            altAttr={item.product_name}
-                            width={56}
-                            height={56}
-                            className="w-full h-full object-contain"
-                          />
+                    <div className="border border-slate-200 divide-y divide-slate-100">
+                      {orderItems.length === 0 ? (
+                        <div className="p-4 text-xs text-slate-500 font-sans italic">
+                          No items metadata found for this order.
                         </div>
-                        <div className="space-y-0.5">
-                          <div className="text-sm font-serif font-normal text-slate-900">
-                            {item.product_name}
-                          </div>
-                          <div className="text-xs text-slate-500 font-mono">
-                            Qty: {item.quantity} x ₹{parseFloat(item.price).toLocaleString("en-IN")}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-sm font-semibold text-slate-900 font-sans">
-                        ₹{(parseFloat(item.price) * item.quantity).toLocaleString("en-IN")}
-                      </div>
+                      ) : (
+                        orderItems.map((item, i) => {
+                          const variation = item.variation || {};
+                          const variantSpecs = [
+                            variation.color ? `Color: ${variation.color}` : null,
+                            variation.purity ? `Purity: ${variation.purity}` : null,
+                            variation.ring_size || variation.ringSize
+                              ? `Size: ${variation.ring_size || variation.ringSize}`
+                              : null,
+                          ].filter(Boolean);
+
+                          return (
+                            <div key={i} className="p-4 flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 bg-slate-50 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center p-1">
+                                  <CustomImg
+                                    srcAttr={item.thumbnail}
+                                    altAttr={item.product_name}
+                                    width={56}
+                                    height={56}
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                                <div className="space-y-0.5">
+                                  <div className="text-sm font-serif font-normal text-slate-900">
+                                    {item.product_name}
+                                  </div>
+                                  {variantSpecs.length > 0 && (
+                                    <div className="text-xs text-slate-500 font-mono">
+                                      {variantSpecs.join(" | ")}
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-slate-500 font-mono">
+                                    Qty: {item.quantity} x ₹{item.price.toLocaleString("en-IN")}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-sm font-semibold text-slate-900 font-sans">
+                                ₹{(item.price * item.quantity).toLocaleString("en-IN")}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                );
+              })()}
 
               {/* Payment Details */}
               <div className="space-y-3 pt-2">

@@ -97,7 +97,7 @@ export default function AboutUsPage() {
       </section>
 
       {/* Accordion Collection Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 pb-16">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 pb-4 sm:pb-16">
         <AboutCollectionAccordion
           img1={aboutUsZigCollection1}
           img2={aboutUsZigCollection2}

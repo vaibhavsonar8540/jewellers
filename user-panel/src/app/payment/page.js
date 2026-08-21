@@ -731,9 +731,9 @@ export default function PaymentPage() {
                 <span className="text-emerald-600 font-bold">FREE</span>
               </div>
 
-              <div className="border-t border-gray-200 pt-3 flex justify-between text-sm sm:text-base font-extrabold text-gray-900">
-                <span>Total Payable Amount</span>
-                <span className="text-xl text-black">₹{finalTotalAmount}</span>
+              <div className="border-t border-gray-200 pt-3 flex justify-between text-sm sm:text-base font-semibold text-black">
+                <span>Total Amount</span>
+                <span className="text-xl text-black font-semibold">₹{finalTotalAmount}</span>
               </div>
             </div>
 
@@ -772,10 +772,10 @@ export default function PaymentPage() {
               {/* Total Payable Box */}
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
                 <div>
-                  <div className="text-[11px] text-gray-500 font-bold uppercase tracking-wider">
-                    Total Amount to Pay
+                  <div className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider">
+                    Total Amount
                   </div>
-                  <div className="text-2xl font-black text-slate-900 font-sans">
+                  <div className="text-2xl font-semibold text-black font-sans">
                     ₹{finalTotalAmount}
                   </div>
                 </div>

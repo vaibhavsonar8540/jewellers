@@ -66,7 +66,7 @@ export default function Home() {
 
             <div className="pt-2">
               <Link
-                href="/book-appointment"
+                href="/appointment"
                 className="inline-flex items-center justify-center bg-[#202A4E] text-white hover:bg-black text-xs sm:text-sm font-semibold tracking-widest uppercase px-8 py-4 rounded-none transition-colors duration-300"
               >
                 Book Appointment
@@ -123,7 +123,7 @@ export default function Home() {
       <DiamondShapeSlider />
 
       {/* Dynamic Latest Product Arrivals Grid */}
-      <LatestArrivalsSection collectionName="all" limit={8} />
+      <LatestArrivalsSection collectionName="all" title="Latest Arrivals" limit={8} />
 
       {/* Our Selections Collection Grid Section */}
       <OurSelections />

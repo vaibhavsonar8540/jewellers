@@ -4,13 +4,16 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Package } from "lucide-react";
 import CustomImg from "@/components/CustomImg";
-import { sortGoldColors } from "@/lib/productService";
+import { sortGoldColors, getProductResolvedPrice } from "@/lib/productService";
 
 export default function ProductCard({ product }) {
   // Set initial active color to the first color in the product's colors array
   const sortedColors = sortGoldColors(product?.colors || []);
   const initialColorId = sortedColors?.[0]?.id || sortedColors?.[0]?.name || null;
   const [activeColorId, setActiveColorId] = useState(initialColorId);
+
+  // Resolve price dynamically (from product.price, base_price, or variation_combo)
+  const displayPrice = getProductResolvedPrice(product, activeColorId);
 
   // Compute first fallback thumbnail image from variation_combo or variationCombo
   const firstCombo = (product?.variation_combo || product?.variationCombo || [])?.find(
@@ -109,7 +112,7 @@ export default function ProductCard({ product }) {
           {/* Price */}
           <div className="flex gap-0.5 items-center text-sm font-bold text-gray-900 tracking-tight">
             <span className="!text-xs">₹</span>
-            <span>{product?.price ? Number(product.price).toLocaleString("en-IN") : "0"}</span>
+            <span>{displayPrice > 0 ? Number(displayPrice).toLocaleString("en-IN") : "0"}</span>
           </div>
 
           {/* Metal Color Circles Swatches */}

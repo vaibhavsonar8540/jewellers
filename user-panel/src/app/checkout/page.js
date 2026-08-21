@@ -452,9 +452,9 @@ export default function CheckoutPage() {
                   <span className="font-semibold text-emerald-700">FREE</span>
                 </div>
                 <div className="w-full h-px bg-slate-200 my-1" />
-                <div className="flex justify-between text-base sm:text-lg font-bold text-slate-900">
-                  <span>Final Total</span>
-                  <span className="text-amber-700 font-sans">₹{grandTotal.toLocaleString("en-IN")}</span>
+                <div className="flex justify-between text-base sm:text-lg font-semibold text-slate-900">
+                  <span>Total Amount</span>
+                  <span className="text-black font-semibold font-sans">₹{grandTotal.toLocaleString("en-IN")}</span>
                 </div>
               </div>
 
@@ -566,7 +566,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between text-slate-600 pt-2 border-t border-slate-200">
                     <span>Total Amount Paid:</span>
-                    <span className="font-bold text-amber-700 text-sm">₹{completedOrderDetails?.amount?.toLocaleString("en-IN")}</span>
+                    <span className="font-semibold text-black text-sm">₹{completedOrderDetails?.amount?.toLocaleString("en-IN")}</span>
                   </div>
                 </div>
 

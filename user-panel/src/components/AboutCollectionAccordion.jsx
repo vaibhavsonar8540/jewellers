@@ -27,7 +27,7 @@ const AboutCollectionAccordion = ({ img1, img2 }) => {
   ];
 
   return (
-    <section className="lg:px-10 pb-16 lg:pb-24">
+    <section className="lg:px-10 pb-4 sm:pb-8 lg:pb-24">
 
 
 

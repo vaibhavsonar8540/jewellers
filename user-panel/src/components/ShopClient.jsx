@@ -126,6 +126,7 @@ export default function ShopClient({ slugParams = [] }) {
   const [tempCategorySlug, setTempCategorySlug] = useState("");
   const [tempSubCategorySlug, setTempSubCategorySlug] = useState("");
   const [tempSortBy, setTempSortBy] = useState("newest");
+  const [mobileFilterDrawerOpen, setMobileFilterDrawerOpen] = useState(false);
 
   // Fetch active products & master taxonomies on mount
   useEffect(() => {
@@ -462,8 +463,8 @@ export default function ShopClient({ slugParams = [] }) {
       {/* Filter Bar & Product Catalog Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
         
-        {/* Horizontal Filter Control Bar (Below Search) */}
-        <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-5 shadow-xs">
+        {/* Desktop Horizontal Filter Control Bar (md screens and above) */}
+        <div className="hidden md:block bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-5 shadow-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 items-end">
             
             {/* 1. Category Custom Dropdown */}
@@ -526,10 +527,46 @@ export default function ShopClient({ slugParams = [] }) {
           </div>
         </div>
 
+        {/* Mobile Single-Line Control Bar (< md screens) */}
+        <div className="md:hidden flex items-center justify-between bg-white rounded-2xl border border-gray-200/80 p-3.5 shadow-xs">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+            <p className="text-xs font-semibold text-gray-600">
+              Total <span className="font-bold text-gray-900">{filteredProducts.length}</span> Products
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {hasActiveFilters && (
+              <button
+                onClick={handleClearAllFilters}
+                className="p-2 border border-gray-200 text-gray-600 hover:text-red-600 rounded-xl text-xs font-bold transition cursor-pointer"
+                title="Clear Filters"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setMobileFilterDrawerOpen(true)}
+              className="relative p-2.5 bg-black text-white rounded-xl hover:bg-gray-800 transition cursor-pointer flex items-center justify-center shadow-sm"
+              aria-label="Filter"
+              title="Filter"
+            >
+              <Filter className="w-4 h-4 text-amber-400" />
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-amber-400 text-black text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-white">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* Dedicated Active Filters Container Card */}
         {hasActiveFilters ? (
-          <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-200">
-            <div className="flex flex-wrap items-center gap-2.5">
+          <div className="bg-white rounded-2xl border border-gray-200/80 p-3 sm:p-5 shadow-xs flex flex-row items-center justify-between gap-3 overflow-x-auto animate-in fade-in duration-200">
+            <div className="flex flex-row items-center gap-2 overflow-x-auto shrink-0">
               <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900 uppercase tracking-wider pr-3 border-r border-gray-200 shrink-0">
                 <Tag className="w-4 h-4 text-amber-600" />
                 <span>Active Filters</span>
@@ -602,7 +639,7 @@ export default function ShopClient({ slugParams = [] }) {
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-5 shadow-xs flex items-center justify-between">
+          <div className="hidden md:flex bg-white rounded-2xl border border-gray-200/80 p-4 sm:p-5 shadow-xs items-center justify-between">
             <p className="text-xs font-semibold text-gray-500 italic flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
               <span>Showing all active catalog products</span>
@@ -675,6 +712,104 @@ export default function ShopClient({ slugParams = [] }) {
           </div>
         )}
       </div>
+
+      {/* Mobile Filter Slide-over Drawer (< md screens) */}
+      {mobileFilterDrawerOpen && (
+        <div className="fixed inset-0 z-[100] md:hidden">
+          {/* Dark Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            onClick={() => setMobileFilterDrawerOpen(false)}
+          />
+
+          {/* Bottom Sheet / Side Drawer Box */}
+          <div className="fixed inset-x-0 bottom-0 max-h-[85vh] bg-white rounded-t-3xl shadow-2xl flex flex-col z-10 animate-in slide-in-from-bottom duration-300 overflow-hidden">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-black text-white rounded-xl">
+                  <Filter className="w-4 h-4 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 font-serif">Filter & Refine</h3>
+                  <p className="text-[11px] text-gray-500 font-sans">Select categories & sorting options</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileFilterDrawerOpen(false)}
+                className="p-2 text-gray-400 hover:text-black rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Drawer Body (Scrollable Form Fields) */}
+            <div className="p-5 overflow-y-auto space-y-4">
+              {/* Category */}
+              <div>
+                <CustomSelect
+                  label="Category"
+                  value={tempCategorySlug}
+                  options={categoryOptions}
+                  onChange={(val) => {
+                    setTempCategorySlug(val);
+                    setTempSubCategorySlug("");
+                  }}
+                  placeholder="All Categories"
+                />
+              </div>
+
+              {/* Sub-Category */}
+              <div>
+                <CustomSelect
+                  label="Sub-Category"
+                  value={tempSubCategorySlug}
+                  options={subCategoryOptions}
+                  onChange={(val) => setTempSubCategorySlug(val)}
+                  disabled={!tempCategorySlug || availableSubCategoriesForTempCategory.length === 0}
+                  placeholder={!tempCategorySlug ? "Select Category First" : "All Sub-Categories"}
+                />
+              </div>
+
+              {/* Price Filter */}
+              <div>
+                <CustomSelect
+                  label="Price Filter"
+                  value={tempSortBy === "price-asc" || tempSortBy === "price-desc" ? tempSortBy : "all"}
+                  options={priceOptions}
+                  onChange={(val) => setTempSortBy(val === "all" ? "newest" : val)}
+                  placeholder="All Prices"
+                />
+              </div>
+            </div>
+
+            {/* Drawer Footer Action Buttons */}
+            <div className="p-5 border-t border-gray-100 bg-white grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  handleClearAllFilters();
+                  setMobileFilterDrawerOpen(false);
+                }}
+                className="w-full h-11 rounded-xl border border-gray-200 text-gray-700 text-xs font-bold uppercase tracking-wider hover:bg-gray-50 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Clear All
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleApplyFilters();
+                  setMobileFilterDrawerOpen(false);
+                }}
+                className="w-full h-11 rounded-xl bg-black text-white text-xs font-bold uppercase tracking-wider hover:bg-gray-800 transition-all cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
+              >
+                <Filter className="w-3.5 h-3.5 text-amber-400" /> Apply Filter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

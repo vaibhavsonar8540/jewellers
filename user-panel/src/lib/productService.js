@@ -21,6 +21,66 @@ export const sortGoldColors = (colorList) => {
 };
 
 /**
+ * Resolves the display price for a product, falling back to base_price,
+ * variation_combo prices, or product_variations if product.price is 0 or null.
+ */
+export const getProductResolvedPrice = (prod, activeColorId = null) => {
+  if (!prod) return 0;
+
+  const comboList = prod.variation_combo || prod.variationCombo || [];
+
+  // 1. If active color is selected, check if a matching combo has a valid price first
+  if (activeColorId && Array.isArray(comboList) && comboList.length > 0) {
+    const activeColorObj = Array.isArray(prod.colors)
+      ? prod.colors.find((c) => c.id === activeColorId || c.name === activeColorId)
+      : null;
+    const activeColorName = activeColorObj?.name || activeColorId;
+
+    const matchedCombo = comboList.find(
+      (c) =>
+        (c.color_id && c.color_id === activeColorId) ||
+        (c.gold_color && String(c.gold_color).toLowerCase() === String(activeColorName).toLowerCase()) ||
+        (c.color && String(c.color).toLowerCase() === String(activeColorName).toLowerCase())
+    );
+    if (matchedCombo && parseFloat(matchedCombo.price) > 0) {
+      return parseFloat(matchedCombo.price);
+    }
+  }
+
+  // 2. Check direct product price
+  const directPrice = parseFloat(prod.price);
+  if (!isNaN(directPrice) && directPrice > 0) {
+    return directPrice;
+  }
+
+  // 3. Check base price column
+  const basePrice = parseFloat(prod.base_price);
+  if (!isNaN(basePrice) && basePrice > 0) {
+    return basePrice;
+  }
+
+  // 4. Fallback to first item in variation_combo with price > 0
+  if (Array.isArray(comboList) && comboList.length > 0) {
+    const comboWithPrice = comboList.find((c) => parseFloat(c?.price) > 0);
+    if (comboWithPrice) {
+      return parseFloat(comboWithPrice.price);
+    }
+  }
+
+  // 5. Fallback to rawVariations or product_variations
+  const varList = prod.rawVariations || prod.variations || prod.product_variations || [];
+  if (Array.isArray(varList) && varList.length > 0) {
+    const varWithPrice = varList.find((v) => parseFloat(v?.price) > 0);
+    if (varWithPrice) {
+      return parseFloat(varWithPrice.price);
+    }
+  }
+
+  return 0;
+};
+
+
+/**
  * Fetch all ACTIVE products along with taxonomy maps for user panel.
  */
 export async function fetchActiveProductsService() {
@@ -174,6 +234,12 @@ export async function fetchActiveProductsService() {
       const catName = catObj?.name || prod.category || "";
       const subName = subObj?.name || prod.sub_category || "";
 
+      const resolvedPrice = getProductResolvedPrice({
+        ...prod,
+        variation_combo: comboList,
+        rawVariations: prodVars,
+      });
+
       return {
         id: prod.id,
         name: prod.name,
@@ -182,7 +248,7 @@ export async function fetchActiveProductsService() {
         description: prod.description,
         gender: prod.gender || null,
         is_active: prod.is_active ?? true,
-        price: parseFloat(prod.price) || 0,
+        price: resolvedPrice,
         stock: parseInt(prod.stock, 10) || 0,
         collection_id: prod.collection_id,
         collection_name: colName,
@@ -245,6 +311,7 @@ export async function fetchLatestProductsByCollectionService(collectionNameOrSlu
       if (!rpcErr && rpcData && Array.isArray(rpcData)) {
         const formattedData = rpcData.map((p) => ({
           ...p,
+          price: getProductResolvedPrice(p),
           karats: p.carats || [],
         }));
         return {

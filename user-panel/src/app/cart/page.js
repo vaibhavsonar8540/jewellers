@@ -209,24 +209,24 @@ export default function CartPage() {
                         )}
 
                         {/* Quantity Counter & Trash Button */}
-                        <div className="flex items-center gap-4 pt-3">
-                          <span className="text-xs sm:text-sm text-gray-700 font-medium font-mono">Qty :</span>
-                          <div className="flex items-center border border-gray-300 w-28 h-9 bg-white">
+                        <div className="flex items-center gap-2.5 sm:gap-4 pt-3">
+                          <span className="text-xs sm:text-sm text-gray-700 font-medium whitespace-nowrap shrink-0">Qty:</span>
+                          <div className="flex items-center border border-gray-300 w-24 sm:w-28 h-8 sm:h-9 bg-white shrink-0">
                             <button
                               type="button"
                               onClick={() => updateQuantity(item.key, -1)}
-                              className="w-9 h-full flex items-center justify-center text-gray-600 hover:text-black text-sm select-none cursor-pointer"
+                              className="w-7 sm:w-9 h-full flex items-center justify-center text-gray-600 hover:text-black text-sm select-none cursor-pointer"
                             >
                               -
                             </button>
-                            <span className="flex-1 text-center font-medium text-sm text-gray-900">
+                            <span className="flex-1 text-center font-medium text-xs sm:text-sm text-gray-900">
                               {item.quantity}
                             </span>
                             <button
                               type="button"
                               onClick={() => updateQuantity(item.key, 1)}
                               disabled={isMaxReached}
-                              className={`w-9 h-full flex items-center justify-center text-sm select-none ${
+                              className={`w-7 sm:w-9 h-full flex items-center justify-center text-sm select-none ${
                                 isMaxReached
                                   ? "text-gray-300 cursor-not-allowed bg-gray-50"
                                   : "text-gray-600 hover:text-black cursor-pointer"
@@ -240,7 +240,7 @@ export default function CartPage() {
                           <button
                             type="button"
                             onClick={() => removeFromCart(item.key)}
-                            className="text-gray-400 hover:text-red-600 transition-colors p-1 cursor-pointer"
+                            className="text-gray-400 hover:text-red-600 transition-colors p-1 cursor-pointer shrink-0"
                             aria-label="Remove item"
                           >
                             <Trash2 className="w-4 h-4 stroke-[1.5]" />
@@ -324,7 +324,7 @@ export default function CartPage() {
 
                     <div className="flex items-center justify-between text-base sm:text-lg text-gray-900 font-medium pt-1">
                       <span>Total Amount</span>
-                      <span className="font-bold text-amber-700">₹{grandTotal.toLocaleString("en-IN")}</span>
+                      <span className="font-semibold text-black">₹{grandTotal.toLocaleString("en-IN")}</span>
                     </div>
                   </div>
 

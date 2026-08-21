@@ -235,6 +235,8 @@ serve(async (req: Request) => {
       order_number: orderNumber,
       user_id: userId,
       items: orderItemsSnapshot,
+      order_items: orderItemsSnapshot,
+      cart_items: orderItemsSnapshot,
       shipping_address: formattedShippingAddress,
       subtotal: subtotal,
       discount_amount: discountAmount,
@@ -248,7 +250,7 @@ serve(async (req: Request) => {
     let createdOrder: any = null;
     let orderInsertError: any = null;
 
-    // Smart Retry Loop: Automatically strips missing columns or handles check constraints
+    // Smart Retry Loop: Automatically strips missing columns or handles check constraints & data types
     for (let attempt = 0; attempt < 10; attempt++) {
       const res = await serviceClient
         .from("orders")
@@ -271,6 +273,17 @@ serve(async (req: Request) => {
         const missingCol = colMatch[1];
         console.warn(`Stripping missing column '${missingCol}' from orders payload and retrying...`);
         delete insertPayload[missingCol];
+      } else if (errMsg.includes("invalid input syntax for type json") || errMsg.includes("is of type text")) {
+        console.warn("Converting items/order_items payload to string for text column constraint...");
+        if (insertPayload.items && typeof insertPayload.items !== "string") {
+          insertPayload.items = JSON.stringify(orderItemsSnapshot);
+        }
+        if (insertPayload.order_items && typeof insertPayload.order_items !== "string") {
+          insertPayload.order_items = JSON.stringify(orderItemsSnapshot);
+        }
+        if (insertPayload.cart_items && typeof insertPayload.cart_items !== "string") {
+          insertPayload.cart_items = JSON.stringify(orderItemsSnapshot);
+        }
       } else if (constraintMatch && constraintMatch[1]) {
         const constraintName = constraintMatch[1];
         const colName = constraintName.replace(/^orders_/, "").replace(/_check$/, "");

@@ -170,13 +170,13 @@ export default function CartDrawer() {
                       )}
 
                       {/* Quantity Controls & Trash */}
-                      <div className="flex items-center gap-4 pt-3">
-                        <span className="text-xs text-gray-700 font-medium">Qty</span>
-                        <div className="flex items-center border border-gray-300 w-24 h-8 bg-white">
+                      <div className="flex items-center gap-2.5 sm:gap-4 pt-3">
+                        <span className="text-xs text-gray-700 font-medium whitespace-nowrap shrink-0">Qty:</span>
+                        <div className="flex items-center border border-gray-300 w-24 h-8 bg-white shrink-0">
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.key, -1)}
-                            className="w-7 h-full flex items-center justify-center text-gray-600 hover:text-black text-sm select-none"
+                            className="w-7 h-full flex items-center justify-center text-gray-600 hover:text-black text-sm select-none cursor-pointer"
                           >
                             -
                           </button>
@@ -201,7 +201,7 @@ export default function CartDrawer() {
                         <button
                           type="button"
                           onClick={() => removeFromCart(item.key)}
-                          className="text-gray-400 hover:text-red-600 transition-colors p-1 cursor-pointer"
+                          className="text-gray-400 hover:text-red-600 transition-colors p-1 cursor-pointer shrink-0"
                           aria-label="Remove item"
                         >
                           <Trash2 className="w-4 h-4 stroke-[1.5]" />

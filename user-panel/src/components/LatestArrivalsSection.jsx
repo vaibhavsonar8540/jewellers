@@ -8,7 +8,7 @@ import { fetchLatestProductsByCollectionService } from "@/lib/productService";
 
 export default function LatestArrivalsSection({
   collectionName = "all",
-  title = "",
+  title = "Latest Arrivals",
   subtitle = "Discover our newest handcrafted arrivals.",
   limit = 10,
   className = "",
@@ -56,13 +56,7 @@ export default function LatestArrivalsSection({
   };
 
   // Compute dynamic section title
-  const displayTitle =
-    title ||
-    (collectionInfo?.name
-      ? `Latest ${collectionInfo.name} Arrivals`
-      : collectionName && collectionName.toLowerCase() !== "all"
-      ? `Latest ${collectionName} Arrivals`
-      : "Latest Product Arrivals");
+  const displayTitle = title || "Latest Arrivals";
 
   const shopUrl =
     collectionInfo?.id

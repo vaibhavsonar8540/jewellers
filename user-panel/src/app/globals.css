@@ -20,3 +20,12 @@ body {
 .font-canela {
   font-family: "Canela", "Cormorant Garamond", "Cinzel", Georgia, serif;
 }
+
+/* Global Input Focus Styles - Gray Focus Border */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  border-color: #9ca3af !important; /* Tailwind gray-400 */
+}
+

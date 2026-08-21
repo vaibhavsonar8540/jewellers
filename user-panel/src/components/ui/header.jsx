@@ -205,7 +205,7 @@ const Header = () => {
                   placeholder="Search name, collection, SKU..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-transparent border-b border-gray-300 text-xs font-semibold text-gray-900 px-1 py-1 focus:outline-none focus:border-black transition-all placeholder:text-gray-400"
+                  className="w-full bg-transparent border-b border-gray-300 text-xs font-semibold text-gray-900 px-1 py-1 focus:outline-none focus:border-gray-400 transition-all placeholder:text-gray-400"
                 />
                 {searchQuery && (
                   <button
@@ -403,7 +403,7 @@ const Header = () => {
               placeholder="Search name, collection, SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-xs font-medium text-gray-900 focus:outline-none focus:border-amber-800 shadow-xs placeholder:text-gray-400"
+              className="w-full bg-gray-50 border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-xs font-medium text-gray-900 focus:outline-none focus:border-gray-400 shadow-xs placeholder:text-gray-400"
             />
             {searchQuery ? (
               <button
