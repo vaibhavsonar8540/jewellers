@@ -9,6 +9,8 @@ const makeSlug = (str) =>
     .replace(/[^\w\s-]/g, "")
     .replace(/\s+/g, "-");
 
+export const revalidate = 3600;
+
 export default async function sitemap() {
   const baseUrl = (siteUrl || "https://luxora-jewelery.vercel.app").replace(/\/$/, "");
   const now = new Date().toISOString();

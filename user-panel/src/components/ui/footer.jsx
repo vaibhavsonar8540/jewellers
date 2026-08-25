@@ -109,16 +109,19 @@ const Footer = () => {
               Collections
             </h4>
             <ul className="space-y-2.5 text-xs text-gray-300 font-normal">
-              {displayCollections.map((item) => (
-                <li key={item.id}>
-                  <Link
-                    href={`/collection?collection=${item.id}`}
-                    className="hover:text-white transition-colors duration-200 block py-0.5"
-                  >
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
+              {displayCollections.map((item) => {
+                const colSlug = item.slug || (item.name || "").toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
+                return (
+                  <li key={item.id}>
+                    <Link
+                      href={`/collection/${colSlug}`}
+                      className="hover:text-white transition-colors duration-200 block py-0.5"
+                    >
+                      {item.name}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 
