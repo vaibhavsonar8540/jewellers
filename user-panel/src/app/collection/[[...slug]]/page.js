@@ -7,10 +7,7 @@ export async function generateMetadata({ params }) {
   const resolvedParams = params ? await params : { slug: [] };
   const slug = resolvedParams?.slug || [];
 
-  const collectionSlug = slug[0] ? slug[0].replace(/-/g, " ") : "";
-  const categorySlug = slug[1] ? slug[1].replace(/-/g, " ") : "";
-
-  return getCollectionMetadata(collectionSlug, categorySlug);
+  return getCollectionMetadata(slug);
 }
 
 export default async function CollectionPage({ params }) {

@@ -83,11 +83,36 @@ export function getHomeMetadata() {
 /**
  * Preset SEO Metadata for Collections / Shop Page
  */
-export function getCollectionMetadata(collectionName = "", categoryName = "") {
+export function getCollectionMetadata(slugInput = []) {
+  let slugList = [];
+  if (Array.isArray(slugInput)) {
+    slugList = slugInput.filter(Boolean);
+  } else if (typeof slugInput === "string" && slugInput) {
+    slugList = [slugInput];
+  }
+
+  const collectionSlug = slugList[0] || "";
+  const categorySlug = slugList[1] || "";
+  const subCategorySlug = slugList[2] || "";
+
+  const formatTitle = (str) =>
+    (str || "")
+      .replace(/-/g, " ")
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+
+  const collectionName = formatTitle(collectionSlug);
+  const categoryName = formatTitle(categorySlug);
+  const subCategoryName = formatTitle(subCategorySlug);
+
   let title = "Fine Jewelry Collections";
   let description = "Browse handcrafted luxury gold and diamond jewelry collections.";
 
-  if (collectionName && categoryName) {
+  if (subCategoryName && categoryName && collectionName) {
+    title = `${subCategoryName} - ${categoryName} | ${collectionName}`;
+    description = `Explore exquisite ${subCategoryName.toLowerCase()} under ${categoryName.toLowerCase()} in our ${collectionName} collection.`;
+  } else if (categoryName && collectionName) {
     title = `${categoryName} - ${collectionName} Collection`;
     description = `Explore exquisite ${categoryName.toLowerCase()} in our ${collectionName} collection. Certified diamonds & pure gold designs.`;
   } else if (collectionName) {
@@ -95,14 +120,15 @@ export function getCollectionMetadata(collectionName = "", categoryName = "") {
     description = `Discover handcrafted ${collectionName.toLowerCase()} jewelry, featuring gold, certified diamonds, and precious gemstones.`;
   }
 
-  const slugPath = collectionName
-    ? `/collection/${collectionName.toLowerCase().replace(/\s+/g, "-")}`
-    : "/collection";
+  const canonicalPath =
+    slugList.length > 0
+      ? `/collection/${slugList.map((s) => String(s).toLowerCase().trim()).join("/")}`
+      : "/collection";
 
   return generatePageMetadata({
     title,
     description,
-    canonicalPath: slugPath,
+    canonicalPath,
   });
 }
 
