@@ -6,6 +6,9 @@ import LatestArrivalsSection from "@/components/LatestArrivalsSection";
 import DiamondShapeSlider from "@/components/DiamondShapeSlider";
 import OurSelections from "@/components/OurSelections";
 import TrustFeatures from "@/components/TrustFeatures";
+import { getHomeMetadata } from "@/utils/pageMeta";
+
+export const metadata = getHomeMetadata();
 
 // Import Hero Carousel Images from src/assets/hero
 import hero2 from "@/assets/hero/hero2.webp";

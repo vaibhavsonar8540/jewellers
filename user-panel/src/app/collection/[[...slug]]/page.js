@@ -1,11 +1,17 @@
 import React, { Suspense } from "react";
 import ShopClient from "@/components/ShopClient";
 import { Loader2 } from "lucide-react";
+import { getCollectionMetadata } from "@/utils/pageMeta";
 
-export const metadata = {
-  title: "Jewelry Collections | Fine Diamond & Gold Jewelry",
-  description: "Browse active luxury jewelry products, collections, categories, and subcategories.",
-};
+export async function generateMetadata({ params }) {
+  const resolvedParams = params ? await params : { slug: [] };
+  const slug = resolvedParams?.slug || [];
+
+  const collectionSlug = slug[0] ? slug[0].replace(/-/g, " ") : "";
+  const categorySlug = slug[1] ? slug[1].replace(/-/g, " ") : "";
+
+  return getCollectionMetadata(collectionSlug, categorySlug);
+}
 
 export default async function CollectionPage({ params }) {
   const resolvedParams = params ? await params : { slug: [] };
