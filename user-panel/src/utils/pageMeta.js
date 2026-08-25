@@ -161,3 +161,13 @@ export function getAppointmentMetadata() {
     canonicalPath: "/appointment",
   });
 }
+
+export function getSitemapMetadata() {
+  return generatePageMetadata({
+    title: "HTML Sitemap - Luxora Jewellers Navigation Overview",
+    description:
+      "Explore the complete index of all pages, fine jewelry collections, categories, and custom design services at Luxora Jewellers.",
+    canonicalPath: "/sitemap",
+  });
+}
+
