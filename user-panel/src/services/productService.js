@@ -20,6 +20,8 @@ export const productService = {
       { data: variationData },
       { data: purityData },
       { data: sizeData },
+      { data: collectionsData },
+      { data: categoriesData },
     ] = await Promise.all([
       supabase.from("products").select("*").eq("id", productId).single(),
       supabase.from("media_mapping").select("*").eq("product_id", productId),
@@ -27,11 +29,56 @@ export const productService = {
       supabase.from("product_variations").select("*").eq("product_id", productId),
       supabase.from("purity").select("*"),
       supabase.from("ring_sizes").select("*"),
+      supabase.from("collections").select("*"),
+      supabase.from("categories").select("*"),
     ]);
 
     if (prodErr || !prodData) {
       throw new Error(prodErr?.message || "Product not found.");
     }
+
+    // Resolve Collection and Category names & slugs
+    const makeSlug = (str) =>
+      (str || "")
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-");
+
+    let colObj = null;
+    if (collectionsData && collectionsData.length > 0) {
+      colObj = collectionsData.find(
+        (c) =>
+          c.id === prodData.collection_id ||
+          c.id === prodData.collection ||
+          (c.name && prodData.collection_name && c.name.toLowerCase() === prodData.collection_name.toLowerCase()) ||
+          (c.name && prodData.collection && c.name.toLowerCase() === prodData.collection.toLowerCase())
+      );
+    }
+
+    let catObj = null;
+    if (categoriesData && categoriesData.length > 0) {
+      catObj = categoriesData.find(
+        (c) =>
+          c.id === prodData.category_id ||
+          c.id === prodData.category ||
+          (c.name && prodData.category_name && c.name.toLowerCase() === prodData.category_name.toLowerCase()) ||
+          (c.name && prodData.category && c.name.toLowerCase() === prodData.category.toLowerCase())
+      );
+    }
+
+    const collectionName = colObj?.name || prodData.collection_name || prodData.collection || "";
+    const collectionSlug = colObj?.slug || makeSlug(collectionName);
+    const categoryName = catObj?.name || prodData.category_name || prodData.category || "";
+    const categorySlug = catObj?.slug || makeSlug(categoryName);
+
+    const enrichedProduct = {
+      ...prodData,
+      collection_name: collectionName,
+      collection_slug: collectionSlug,
+      category_name: categoryName,
+      category_slug: categorySlug,
+    };
 
     // Fetch Diamond Shape details if applicable
     let diamondShapeData = null;
@@ -111,7 +158,7 @@ export const productService = {
     }
 
     return {
-      product: prodData,
+      product: enrichedProduct,
       mediaList: mediaData || [],
       colors: sortGoldColors(finalColors),
       purities: finalPurities,

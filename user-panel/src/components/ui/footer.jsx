@@ -112,7 +112,7 @@ const Footer = () => {
               {displayCollections.map((item) => (
                 <li key={item.id}>
                   <Link
-                    href={`/shop?collection=${item.id}`}
+                    href={`/collection?collection=${item.id}`}
                     className="hover:text-white transition-colors duration-200 block py-0.5"
                   >
                     {item.name}

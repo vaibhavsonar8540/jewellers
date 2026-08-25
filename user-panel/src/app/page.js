@@ -24,21 +24,21 @@ const heroSlides = [
     mobileSrc: hero2Small,
     title: "Timeless Elegance & Grace",
     desc: "Handcrafted diamond jewellery designed to celebrate your most cherished moments with unmatched sparkle.",
-    href: "/shop",
+    href: "/collection/jewellery",
   },
   {
     src: hero3,
     mobileSrc: hero3Small,
     title: "The Solitaire Heritage",
     desc: "Discover brilliant-cut solitaire diamonds, meticulously selected for extraordinary fire and clarity.",
-    href: "/shop",
+    href: "/collection/jewellery",
   },
   {
     src: hero4,
     mobileSrc: hero4Small,
     title: "Royal High Jewellery",
     desc: "Exquisite artisanal craftsmanship meeting contemporary luxury to define your personal signature.",
-    href: "/shop",
+    href: "/collection/jewellery",
   },
 ];
 

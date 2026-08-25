@@ -221,7 +221,7 @@ export default function ProductDetailPage({ params }) {
           The product you are looking for does not exist or has been removed.
         </p>
         <Link
-          href="/shop"
+          href="/collection/jewellery"
           className="px-6 py-3 bg-[#202A4E] text-white text-xs font-semibold uppercase tracking-widest inline-flex items-center gap-2 hover:bg-black transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Shop
@@ -350,6 +350,32 @@ export default function ProductDetailPage({ params }) {
 
   const hasDetailData = itemDetailRows.length > 0 || diamondInfoRows.length > 0;
 
+  const makeSlug = (str) =>
+    (str || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
+
+  const formatTitle = (str) => {
+    if (!str) return "";
+    return str
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  const rawColName = product.collection_name || product.collection || "";
+  const rawCatName = product.category_name || product.category || "";
+
+  const colSlug = product.collection_slug || makeSlug(rawColName) || "jewellery";
+  const colName = rawColName ? formatTitle(rawColName) : "Jewellery";
+
+  const catSlug = product.category_slug || makeSlug(rawCatName);
+  const catName = rawCatName ? formatTitle(rawCatName) : "";
+
+  const showCategory = catName && makeSlug(catName) !== makeSlug(colName);
+
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans pb-24">
       {/* Breadcrumb Navigation */}
@@ -359,9 +385,17 @@ export default function ProductDetailPage({ params }) {
             Home
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-          <Link href="/shop" className="hover:text-black transition-colors">
-            Rings
+          <Link href={`/collection/${colSlug}`} className="hover:text-black transition-colors">
+            {colName}
           </Link>
+          {showCategory && (
+            <>
+              <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              <Link href={`/collection/${colSlug}/${catSlug}`} className="hover:text-black transition-colors">
+                {catName}
+              </Link>
+            </>
+          )}
           <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
           <span className="text-gray-800 font-medium truncate">{product.name}</span>
         </nav>

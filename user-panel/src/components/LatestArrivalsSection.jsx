@@ -55,15 +55,20 @@ export default function LatestArrivalsSection({
     }
   };
 
-  // Compute dynamic section title
+  const makeSlug = (str) =>
+    (str || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
+
+  // Compute dynamic section title & collection URL
   const displayTitle = title || "Latest Arrivals";
 
-  const shopUrl =
-    collectionInfo?.id
-      ? `/shop?collection=${collectionInfo.id}`
-      : collectionName && collectionName.toLowerCase() !== "all"
-      ? `/shop?search=${encodeURIComponent(collectionName)}`
-      : "/shop";
+  const rawColSlug = collectionInfo?.slug || collectionInfo?.name || (collectionName && collectionName.toLowerCase() !== "all" ? collectionName : "");
+  const collectionUrl = rawColSlug
+    ? `/collection/${makeSlug(rawColSlug)}`
+    : "/collection";
 
   return (
     <section className={`pb-12 sm:pb-20 px-4 sm:px-8 lg:px-20 mx-auto ${className}`}>
@@ -82,7 +87,7 @@ export default function LatestArrivalsSection({
         </div>
 
         <Link
-          href={shopUrl}
+          href={collectionUrl}
           className="text-xs sm:text-sm font-bold tracking-widest text-[#202A4E] hover:text-amber-800 uppercase transition-colors inline-flex items-center gap-1.5 shrink-0"
         >
           <span>View All</span>
@@ -152,7 +157,7 @@ export default function LatestArrivalsSection({
             No products found for {collectionName !== "all" ? `"${collectionName}"` : "this section"}.
           </p>
           <Link
-            href="/shop"
+            href="/collection"
             className="inline-block mt-3 text-xs font-bold text-amber-900 underline uppercase"
           >
             Explore All Jewelry
