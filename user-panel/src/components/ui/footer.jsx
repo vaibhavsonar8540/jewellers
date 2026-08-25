@@ -146,7 +146,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/book-appointment"
+                  href="/appointment"
                   className="hover:text-white transition-colors duration-200 block py-0.5"
                 >
                   Book an Appointment
