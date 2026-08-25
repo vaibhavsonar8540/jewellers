@@ -1,9 +1,15 @@
-"use client";
-
 import React from "react";
 import Link from "next/link";
 import HeroBanner from "@/components/heroBanner";
 import CustomImg from "@/components/CustomImg";
+import { generatePageMetadata } from "@/utils/pageMeta";
+
+export const metadata = generatePageMetadata({
+  title: "Bespoke Custom Jewelry Studio | Handcrafted Fine Jewelry",
+  description:
+    "Design your unique custom engagement ring or bespoke diamond jewelry with Luxora master jewelers.",
+  canonicalPath: "/custom-jewelry",
+});
 
 // Assets
 import customJewelDesktop from "@/assets/custom-jewelry/custom-jewel-desktop.webp";

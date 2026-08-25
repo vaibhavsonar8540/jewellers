@@ -1,7 +1,12 @@
-"use client";
-
 import React from "react";
 import PolicyLayout from "@/components/ui/PolicyLayout";
+import { generatePageMetadata } from "@/utils/pageMeta";
+
+export const metadata = generatePageMetadata({
+  title: "Shipping & Returns Policy",
+  description: "Information on insured shipping, delivery timelines, and 15-day free returns.",
+  canonicalPath: "/returns-shipping",
+});
 
 export default function ReturnsAndShippingPage() {
   const introParagraphs = [

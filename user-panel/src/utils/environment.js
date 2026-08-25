@@ -1,17 +1,26 @@
 /**
  * Environment configuration with fallback defaults for safe SSR and SEO operations.
  */
-export const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (typeof window !== "undefined"
-    ? window.location.origin
-    : "https://jewellers.com");
+const getSiteUrl = () => {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
+  }
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return "https://luxora-jewelery.vercel.app";
+};
+
+export const siteUrl = getSiteUrl();
 
 export const siteName =
-  process.env.NEXT_PUBLIC_SITE_NAME || "Jewellers Fine Jewelry";
+  process.env.NEXT_PUBLIC_SITE_NAME || "Luxora Jewellers";
 
 export const contactEmail =
-  process.env.NEXT_PUBLIC_CONTACT_EMAIL || "support@jewellers.com";
+  process.env.NEXT_PUBLIC_CONTACT_EMAIL || "support@luxorajewellers.com";
 
 export const contactPhone =
   process.env.NEXT_PUBLIC_CONTACT_PHONE || "+91 98765 43210";

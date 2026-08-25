@@ -1,7 +1,12 @@
-"use client";
-
 import React from "react";
 import PolicyLayout from "@/components/ui/PolicyLayout";
+import { generatePageMetadata } from "@/utils/pageMeta";
+
+export const metadata = generatePageMetadata({
+  title: "Terms & Conditions",
+  description: "Review the terms and conditions of service for Luxora Jewellers.",
+  canonicalPath: "/terms-and-conditions",
+});
 
 export default function TermsAndConditionsPage() {
   const introParagraphs = [

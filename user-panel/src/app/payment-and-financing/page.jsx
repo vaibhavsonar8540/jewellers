@@ -1,7 +1,12 @@
-"use client";
-
 import React from "react";
 import PolicyLayout from "@/components/ui/PolicyLayout";
+import { generatePageMetadata } from "@/utils/pageMeta";
+
+export const metadata = generatePageMetadata({
+  title: "Payment Options & Financing",
+  description: "Learn about secure payment methods and flexible financing for fine jewelry.",
+  canonicalPath: "/payment-and-financing",
+});
 
 export default function PaymentAndFinancingPage() {
   const introParagraphs = [

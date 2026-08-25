@@ -1,7 +1,12 @@
-"use client";
-
 import React from "react";
 import PolicyLayout from "@/components/ui/PolicyLayout";
+import { generatePageMetadata } from "@/utils/pageMeta";
+
+export const metadata = generatePageMetadata({
+  title: "Privacy Policy",
+  description: "Learn how Luxora Jewellers protects your privacy and personal data.",
+  canonicalPath: "/privacy-policy",
+});
 
 export default function PrivacyPolicyPage() {
   const introParagraphs = [

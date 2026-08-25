@@ -9,12 +9,9 @@ import aboutUsZigCollection1 from "@/assets/about-us/aboutUsCollection1.webp";
 import aboutUsZigCollection2 from "@/assets/about-us/aboutUsCollection2.webp";
 import Zigzag from "@/components/zigzag";
 import AboutCollectionAccordion from "@/components/AboutCollectionAccordion";
+import { getAboutMetadata } from "@/utils/pageMeta";
 
-export const metadata = {
-  title: "About Us | Luxora Jewellers",
-  description:
-    "Learn about our heritage, craft, and passion for fine handmade jewelry.",
-};
+export const metadata = getAboutMetadata();
 
 const aboutUsContent = {
   section1: {
