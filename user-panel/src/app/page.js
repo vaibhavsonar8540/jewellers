@@ -46,8 +46,46 @@ const heroSlides = [
 ];
 
 export default function Home() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://luxorajewellers.com/#website",
+        "url": "https://luxorajewellers.com",
+        "name": "Luxora Jewellers",
+        "description": "Handcrafted luxury gold, certified diamond rings, and bespoke fine jewelry.",
+        "publisher": {
+          "@id": "https://luxorajewellers.com/#organization",
+        },
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://luxorajewellers.com/#organization",
+        "name": "Luxora Jewellers",
+        "url": "https://luxorajewellers.com",
+        "logo": "https://luxorajewellers.com/logo.png",
+        "sameAs": [
+          "https://facebook.com/luxorajewellers",
+          "https://instagram.com/luxorajewellers"
+        ],
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-white">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      {/* Semantic Primary H1 for Search Crawlers & Screen Readers */}
+      <h1 className="sr-only">
+        Luxora Jewellers | Luxury Gold, Certified Diamonds & Bespoke Fine Jewelry
+      </h1>
+
       {/* Hero Carousel Section */}
       <section className="w-full">
         <HeroCarousel slides={heroSlides} autoPlay={true} autoPlayInterval={5000} />
